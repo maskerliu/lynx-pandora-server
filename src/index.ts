@@ -1,11 +1,13 @@
 import compression from 'compression'
 import cors, { CorsOptions } from 'cors'
 import express, { Application, Response } from 'express'
+import fs from 'fs'
 import http from 'http'
 import { Autowired, Component } from 'lynx-express-mvc'
 
 import fileUpload from 'express-fileupload'
 
+import { APP_BASE_DIR, DB_DIR, STATIC_DIR } from './common/env.const'
 import BizRouter from './router'
 
 
@@ -35,7 +37,7 @@ class TestServer {
   private initHttpServer() {
     this.httpApp = express()
     this.corsOpt.origin = [
-      `http://localhost:80`
+      `http://localhost:8081`
     ]
 
     this.httpApp.use(express.static('./static'))
@@ -48,19 +50,25 @@ class TestServer {
   }
 
   private async startHttpServer() {
-    let HTTP: any
-    // HTTP = await import('http')
+    this.initAppEnv()
     this.httpServer = http.createServer(this.httpApp)
 
     this.httpServer.listen(
-      80,
+      8081,
       '0.0.0.0',
-      () => console.log(`--启动本地代理Http服务--[80]`)
+      () => console.log(`--启动本地代理Http服务--[8081]`)
     )
   }
 
   private handleRequest(req: any, resp: Response) {
     this.bizRouter.route(req, resp)
+  }
+
+  private initAppEnv() {
+
+    if (!fs.existsSync(APP_BASE_DIR)) { fs.mkdirSync(APP_BASE_DIR) }
+    if (!fs.existsSync(DB_DIR)) { fs.mkdirSync(DB_DIR) }
+    if (!fs.existsSync(STATIC_DIR)) { fs.mkdirSync(STATIC_DIR) }
   }
 }
 

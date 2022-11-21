@@ -6,13 +6,9 @@
     "main": "./dist/electron/main.cjs",
     "license": "UNLICENSED",
     "scripts": {
-        "build": "node --loader ts-node/esm --experimental-json-modules --max_old_space_size=3500 .build-scripts/builder.ts",
+        "build": "tsc -p tsconfig.json",
         "build:clean": "cross-env BUILD_TARGET=clean  node --loader ts-node/esm --experimental-json-modules .build-scripts/builder.ts",
-        "build:web": "cross-env BUILD_TARGET=web node --loader ts-node/esm --experimental-json-modules .build-scripts/builder.ts",
-        "dev": "node --experimental-worker --loader ts-node/esm --experimental-json-modules .build-scripts/runner.dev.ts",
-        "pub": "yarn build && electron-builder",
-        "asar": "node .build-scripts/compress-asar.js",
-        "test": "node --loader ts-node/esm .build-scripts/index.ts"
+        "dev": "node --experimental-specifier-resolution=node --loader ts-node/esm --experimental-json-modules ./src/index.ts"
     },
     "dependencies": {
         "axios": "^1.1.3",
