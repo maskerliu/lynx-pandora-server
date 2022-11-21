@@ -2,15 +2,26 @@ import { Autowired, Service } from 'lynx-express-mvc'
 import { User } from '../models/user.model'
 import AccountRepo from '../repository/account.repo'
 
+import { Dubbo } from 'apache-dubbo-consumer'
+import { Zk } from 'apache-dubbo-registry'
+import DubboSerives from './dubbo'
 
 @Service()
 export default class AccountService {
 
+    dubbo = new Dubbo<typeof DubboSerives>({
+        application: {
+            name: 'hello-api'
+        },
+        registry: Zk({ connect: 'localhost:2181' }),
+        services: DubboSerives
+    })
 
     @Autowired()
     accountRepo: AccountRepo
 
     async login(phone: string, verify: string) {
+        await this.dubbo.service.DataService.sayHello('dubbo-js')
 
         let account = await this.accountRepo.get('phone', phone)
         if (account != null && account.encryptPWD == verify) {
@@ -36,7 +47,7 @@ export default class AccountService {
                 encryptPWD: pwd
             }
             let uid = await this.accountRepo.update(account)
-            
+
         }
         return token
     }
