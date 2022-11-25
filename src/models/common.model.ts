@@ -1,5 +1,8 @@
 
 export namespace Common {
-    
-    export type BasicDBDoc = PouchDB.Core.IdMeta & PouchDB.Core.RevisionIdMeta
+
+  export interface DBDoc {
+    _id?: string
+    _rev?: string
+  }
 }

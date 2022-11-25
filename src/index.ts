@@ -14,6 +14,7 @@ import BizRouter from './router'
 @Component()
 class TestServer {
 
+  private port: number = 8884
   private httpServer: any
   private httpApp: Application
 
@@ -37,10 +38,13 @@ class TestServer {
   private initHttpServer() {
     this.httpApp = express()
     this.corsOpt.origin = [
-      `http://localhost:8081`
+      `http://localhost:${this.port}`,
+      `http://localhost:9081`,
+      'http://192.168.25.16:9081'
     ]
 
     this.httpApp.use(express.static('./static'))
+    this.httpApp.use('/_res', express.static(STATIC_DIR))
     this.httpApp.use(cors(this.corsOpt))
     this.httpApp.use(compression())
     this.httpApp.use(express.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }))
@@ -54,9 +58,9 @@ class TestServer {
     this.httpServer = http.createServer(this.httpApp)
 
     this.httpServer.listen(
-      8081,
+      this.port,
       '0.0.0.0',
-      () => console.log(`--启动本地代理Http服务--[8081]`)
+      () => console.log(`--启动本地代理Http服务--[${this.port}]`)
     )
   }
 
@@ -65,7 +69,6 @@ class TestServer {
   }
 
   private initAppEnv() {
-
     if (!fs.existsSync(APP_BASE_DIR)) { fs.mkdirSync(APP_BASE_DIR) }
     if (!fs.existsSync(DB_DIR)) { fs.mkdirSync(DB_DIR) }
     if (!fs.existsSync(STATIC_DIR)) { fs.mkdirSync(STATIC_DIR) }
