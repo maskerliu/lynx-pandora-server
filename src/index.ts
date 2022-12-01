@@ -1,22 +1,25 @@
 import compression from 'compression'
 import cors, { CorsOptions } from 'cors'
 import express, { Application, Response } from 'express'
-import fs from 'fs'
-import http from 'http'
-import { Autowired, Component } from 'lynx-express-mvc'
-
 import fileUpload from 'express-fileupload'
-
+import fs from 'fs'
+import { Autowired, Component } from 'lynx-express-mvc'
 import { APP_BASE_DIR, DB_DIR, STATIC_DIR } from './common/env.const'
 import BizRouter from './router'
 
+import webpack from 'webpack'
+import WebpackDevMiddleware from 'webpack-dev-middleware'
+import WebpackHotMiddleware from 'webpack-hot-middleware'
+import MainConfig from '../scripts/webpack.config'
+import path from 'path'
 
 @Component()
-class TestServer {
+export default class BizServer {
 
+  private buildConfig = JSON.parse(process.env.BUILD_CONFIG)
   private port: number = 8884
   private httpServer: any
-  private httpApp: Application
+  public httpApp: Application
 
   @Autowired()
   bizRouter: BizRouter
@@ -25,6 +28,7 @@ class TestServer {
     credentials: true,
     optionsSuccessStatus: 200,
   }
+
   public async start() {
     this.bizRouter.init()
     this.initHttpServer()
@@ -38,9 +42,12 @@ class TestServer {
   private initHttpServer() {
     this.httpApp = express()
     this.corsOpt.origin = [
-      `http://localhost:${this.port}`,
-      `http://localhost:9081`,
-      'http://192.168.25.16:9081'
+      // `http://localhost:${this.port}`,
+      // `http://localhost:9081`,
+      'http://192.168.25.16:9081',
+      'https://192.168.25.16:9081',
+      'http://192.168.101.7:9081',
+      'https://maskerliu.github.io'
     ]
 
     this.httpApp.use(express.static('./static'))
@@ -54,8 +61,18 @@ class TestServer {
   }
 
   private async startHttpServer() {
-    this.initAppEnv()
-    this.httpServer = http.createServer(this.httpApp)
+    let HTTP: any
+    let baseDir = process.env.NODE_ENV == 'development' ? '' : path.resolve() + '/'
+    if (this.buildConfig.protocol == 'https') {
+      HTTP = await import('https')
+      var key = fs.readFileSync(baseDir + 'cert/private.key')
+      var cert = fs.readFileSync(baseDir + 'cert/mydomain.crt')
+      let opt = { key, cert }
+      this.httpServer = HTTP.createServer(opt, this.httpApp)
+    } else {
+      HTTP = await import('http')
+      this.httpServer = HTTP.createServer(this.httpApp)
+    }
 
     this.httpServer.listen(
       this.port,
@@ -68,13 +85,31 @@ class TestServer {
     this.bizRouter.route(req, resp)
   }
 
-  private initAppEnv() {
-    if (!fs.existsSync(APP_BASE_DIR)) { fs.mkdirSync(APP_BASE_DIR) }
-    if (!fs.existsSync(DB_DIR)) { fs.mkdirSync(DB_DIR) }
-    if (!fs.existsSync(STATIC_DIR)) { fs.mkdirSync(STATIC_DIR) }
-  }
+  init() { }
 }
 
-const localServer: any = new TestServer()
-localServer.init()
-localServer.start()
+function initAppEnv() {
+  fs.open(APP_BASE_DIR, (err) => {
+    if (err) {
+      fs.mkdir(APP_BASE_DIR, (err) => {
+        if (err) {
+          initAppEnv()
+        } else {
+          fs.open(DB_DIR, (err) => { if (err) fs.mkdirSync(DB_DIR) })
+          fs.open(STATIC_DIR, (err) => { if (err) fs.mkdirSync(STATIC_DIR) })
+        }
+      })
+    } else {
+      fs.open(DB_DIR, (err) => { if (err) fs.mkdirSync(DB_DIR) })
+      fs.open(STATIC_DIR, (err) => { if (err) fs.mkdirSync(STATIC_DIR) })
+    }
+  })
+}
+
+initAppEnv()
+
+setTimeout(() => {
+  const localServer = new BizServer()
+  localServer.init()
+  localServer.start()
+}, 500)

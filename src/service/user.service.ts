@@ -66,7 +66,7 @@ export default class UserService {
       let profile = await this.getMyProfile(token)
       let ext = avatar.name.split('.').pop()
       await avatar.mv(path.join(STATIC_DIR, avatar.md5 + '.' + ext))
-      profile.avatar = `http://192.168.25.16:8884/_res/${avatar.md5}.${ext}`
+      profile.avatar = `//192.168.25.16:8884/_res/${avatar.md5}.${ext}`
 
       delete profile.encryptPWD
       delete profile.token

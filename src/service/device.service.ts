@@ -2,7 +2,7 @@ import { Autowired, Service } from 'lynx-express-mvc'
 import { connect, IClientOptions, MqttClient } from 'mqtt'
 import { Lynx_Mqtt_Broker } from '../common/env.const'
 import { IOT } from '../models/iot.model'
-import DeviceRepo from '../repository/device.repo'
+import { DeviceRepo } from '../repository/iot.repo'
 
 @Service()
 export default class DeviceMgrService {

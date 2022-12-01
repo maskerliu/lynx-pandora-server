@@ -4,8 +4,8 @@ import { IOT } from '../models/iot.model'
 import BaseRepo from './base.repo'
 
 @Repository(DB_DIR, 'device.db', ['uid'])
-export default class DeviceRepo extends BaseRepo<IOT.Device> {
-    
+export class DeviceRepo extends BaseRepo<IOT.Device> {
+
   public async update(item: IOT.Device) {
     let result = null
     let getResult = await this.get('deviceId', item.deviceId, ['_rev'])
@@ -21,4 +21,9 @@ export default class DeviceRepo extends BaseRepo<IOT.Device> {
     else
       throw '更新失败'
   }
+}
+
+@Repository(DB_DIR, 'device-data.db', ['uid'])
+export class DeviceDataRepo extends BaseRepo<any> {
+
 }

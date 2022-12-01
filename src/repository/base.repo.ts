@@ -1,13 +1,12 @@
-
-import 'pouchdb-node'
 import { Common } from '../models/common.model'
+import 'pouchdb-node'
 
 export default class BaseRepo<T extends Common.DBDoc> {
 
   protected pouchdb: PouchDB.Database
 
   public async search(field?: string, query?: string, returnFields?: Array<string>) {
-    let request: PouchDB.Find.FindRequest<T> = {
+    let request: any= {
       selector: {
         _id: { $ne: /_design\/idx/ },
       },
@@ -23,7 +22,7 @@ export default class BaseRepo<T extends Common.DBDoc> {
   }
 
   public async get(field: string, query: string, returnFields?: Array<string>) {
-    let request: PouchDB.Find.FindRequest<T> = {
+    let request: any = {
       selector: {
         _id: { $ne: /_design\/idx/ },
       },
@@ -35,7 +34,7 @@ export default class BaseRepo<T extends Common.DBDoc> {
     return result[0]
   }
 
-  public async find(request: PouchDB.Find.FindRequest<T>) {
+  public async find(request: PouchDB.Find.FindRequest<any>) {
     let data: Array<T> = new Array()
     let result = await this.pouchdb.find(request)
     if (result.docs) {
