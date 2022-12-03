@@ -13,13 +13,13 @@ import { STATIC_DIR } from '../common/env.const'
 @Service()
 export default class UserService {
 
-  dubbo = new Dubbo<typeof DubboSerives>({
-    application: {
-      name: 'hello-api'
-    },
-    registry: Zk({ connect: 'localhost:2181' }),
-    services: DubboSerives
-  })
+  // dubbo = new Dubbo<typeof DubboSerives>({
+  //   application: {
+  //     name: 'hello-api'
+  //   },
+  //   registry: Zk({ connect: 'localhost:2181' }),
+  //   services: DubboSerives
+  // })
 
   @Autowired()
   accountRepo: AccountRepo
@@ -28,8 +28,8 @@ export default class UserService {
   userInfoRepo: UserInfoRepo
 
   async login(phone: string, verify: string) {
-    let result = await this.dubbo.service.DataService.sayHello('dubbo-js')
-    console.log(result.res)
+    // let result = await this.dubbo.service.DataService.sayHello('dubbo-js')
+    // console.log(result.res)
 
     let account = await this.accountRepo.get('phone', phone)
     if (account != null) {
