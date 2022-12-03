@@ -3,15 +3,12 @@ import cors, { CorsOptions } from 'cors'
 import express, { Application, Response } from 'express'
 import fileUpload from 'express-fileupload'
 import fs from 'fs'
+import os from 'os'
 import { Autowired, Component } from 'lynx-express-mvc'
+import path from 'path'
 import { APP_BASE_DIR, DB_DIR, STATIC_DIR } from './common/env.const'
 import BizRouter from './router'
-
-import webpack from 'webpack'
-import WebpackDevMiddleware from 'webpack-dev-middleware'
-import WebpackHotMiddleware from 'webpack-hot-middleware'
-import MainConfig from '../scripts/webpack.config'
-import path from 'path'
+import expressStaticGzip from 'express-static-gzip'
 
 @Component()
 export default class BizServer {
@@ -44,14 +41,17 @@ export default class BizServer {
     this.corsOpt.origin = [
       // `http://localhost:${this.port}`,
       // `http://localhost:9081`,
-      'http://192.168.25.16:9081',
-      'https://192.168.25.16:9081',
-      'http://192.168.101.7:9081',
-      'https://maskerliu.github.io'
+      'https://maskerliu.github.io',
+      `http://${getLocalIP()}:9081`,
+      `https://${getLocalIP()}:9081`,
+      `https://${getLocalIP()}:8884`
     ]
 
     this.httpApp.use(express.static('./static'))
-    this.httpApp.use('/_res', express.static(STATIC_DIR))
+    this.httpApp.use('/_res', expressStaticGzip(STATIC_DIR, {
+      enableBrotli: true,
+      orderPreference: ['gz', 'br']
+    }))
     this.httpApp.use(cors(this.corsOpt))
     this.httpApp.use(compression())
     this.httpApp.use(express.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }))
@@ -104,6 +104,37 @@ function initAppEnv() {
       fs.open(STATIC_DIR, (err) => { if (err) fs.mkdirSync(STATIC_DIR) })
     }
   })
+}
+
+function getLocalIP() {
+  const netInfo = os.networkInterfaces()
+  let ip = ''
+
+  switch (os.type()) {
+    case 'Windows_NT':
+      for (let netName in netInfo) {
+        if (netName === '本地连接' || netName === '以太网') {
+          for (let j = 0; j < netInfo[netName].length; j++) {
+            if (netInfo[netName][j].family === 'IPv4') {
+              ip = netInfo[netName][j].address
+              break;
+            }
+          }
+        }
+      }
+      break
+    case 'Darwin':
+      for (let i = 0; i < netInfo.en0.length; ++i) {
+        if (netInfo.en0[i].family == 'IPv4') {
+          ip = netInfo.en0[i].address
+        }
+      }
+      break
+    case 'Linux':
+      ip = netInfo.eth0[0].address
+      break
+  }
+  return ip
 }
 
 initAppEnv()

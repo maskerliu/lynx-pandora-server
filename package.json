@@ -16,6 +16,7 @@
         "apache-dubbo-consumer": "^4.0.0",
         "axios": "^1.1.3",
         "compression": "^1.7.4",
+        "express-static-gzip": "^2.1.7",
         "cors": "^2.8.5",
         "lynx-express-mvc": "1.0.27",
         "md5": "^2.3.0",
