@@ -14,12 +14,19 @@ export namespace User {
     expired: number, // 有效期
   }
 
+  export enum UserOnlineStatus {
+    Unknown = -1,
+    Offline = 0,
+    Online = 1
+  }
+
   export interface Profile extends Common.DBDoc {
     uid: string,
     showNo?: string,
     name?: string,
     gender?: UserGender,
     avatar?: string,
+    onlineStatus?: UserOnlineStatus
   }
 
   export interface Account extends Common.DBDoc {

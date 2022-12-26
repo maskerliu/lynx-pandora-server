@@ -3,8 +3,16 @@ import { DB_DIR } from '../common/env.const'
 import { IOT } from '../models/iot.model'
 import BaseRepo from './base.repo'
 
-@Repository(DB_DIR, 'device.db', ['uid'])
+@Repository(DB_DIR, 'device.db')
 export class DeviceRepo extends BaseRepo<IOT.Device> {
+
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['uid'], ddoc: 'idx-uid' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
 
   public async update(item: IOT.Device) {
     let result = null
@@ -23,7 +31,14 @@ export class DeviceRepo extends BaseRepo<IOT.Device> {
   }
 }
 
-@Repository(DB_DIR, 'device-data.db', ['uid'])
+@Repository(DB_DIR, 'device-data.db')
 export class DeviceDataRepo extends BaseRepo<any> {
 
+async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['uid'], ddoc: 'idx-uid' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
 }

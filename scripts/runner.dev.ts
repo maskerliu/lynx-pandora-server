@@ -23,7 +23,7 @@ async function startWHM() {
     config.init()
     const compiler = webpack(config)
     hotMiddleware = WebpackHotMiddleware(compiler, { log: false, path: './__webpack_hmr', heartbeat: 2500 })
-    compiler.hooks.watchRun.tapAsync("watch-run", (compilation, done) => {
+    compiler.hooks.watchRun.tapAsync('watch-run', (_, done) => {
       deleteSync('./dist/*.hot-update.*')
       consoleLog('compiling\n', 'green')
       done()
@@ -35,7 +35,7 @@ async function startWHM() {
         reject(err)
       } else {
         if (serverProcess && serverProcess.kill()) {
-          if (os.platform() !== "win32") {
+          if (os.platform() !== 'win32') {
             process.kill(serverProcess.pid!)
             serverProcess = null
             startServer()
@@ -43,7 +43,7 @@ async function startWHM() {
             const pid = serverProcess.pid
             exec(`TASKKILL /F /IM node.exe`, (err, data) => {
               if (err) console.log(err)
-              else console.log("kill pid: " + pid + " success!")
+              else console.log(`kill pid:  ${pid} success!`)
               serverProcess = null
               startServer()
             })

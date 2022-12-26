@@ -27,7 +27,7 @@ export default class BizServer {
   }
 
   public async start() {
-    this.bizRouter.init()
+    // this.bizRouter.instance()
     this.initHttpServer()
 
     if (this.httpServer != null) {
@@ -44,13 +44,23 @@ export default class BizServer {
       'https://maskerliu.github.io',
       `http://${getLocalIP()}:9081`,
       `https://${getLocalIP()}:9081`,
+      `http://${getLocalIP()}:9082`,
+      `https://${getLocalIP()}:9082`,
       `https://${getLocalIP()}:8884`
     ]
 
     this.httpApp.use(express.static('./static'))
     this.httpApp.use('/_res', expressStaticGzip(STATIC_DIR, {
       enableBrotli: true,
-      orderPreference: ['gz', 'br']
+      orderPreference: ['gz', 'br'],
+      serveStatic: {
+        maxAge: '30 days',
+        setHeaders: (res, path, stat) => {
+          res.setHeader
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+          res.setHeader('Access-Control-Allow-Origin', '*')
+        }
+      }
     }))
     this.httpApp.use(cors(this.corsOpt))
     this.httpApp.use(compression())
@@ -82,10 +92,11 @@ export default class BizServer {
   }
 
   private handleRequest(req: any, resp: Response) {
+    console.log('hello')
     this.bizRouter.route(req, resp)
   }
 
-  init() { }
+  instance() { }
 }
 
 function initAppEnv() {
@@ -141,6 +152,6 @@ initAppEnv()
 
 setTimeout(() => {
   const localServer = new BizServer()
-  localServer.init()
+  localServer.instance()
   localServer.start()
 }, 500)

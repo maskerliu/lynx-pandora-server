@@ -4,6 +4,8 @@ import { Router, Route } from 'lynx-express-mvc'
 import './controllers/common.controller'
 import './controllers/user.controller'
 import './controllers/iot.controller'
+import './controllers/im.controller'
+import './controllers/chatroom.controller'
 
 @Router()
 export default class BizRouter {
@@ -15,5 +17,5 @@ export default class BizRouter {
 
   }
 
-  init() { }
+  instance() { }
 }

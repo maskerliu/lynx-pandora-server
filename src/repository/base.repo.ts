@@ -1,12 +1,35 @@
 import { Common } from '../models/common.model'
 import 'pouchdb-node'
 
-export default class BaseRepo<T extends Common.DBDoc> {
+export default abstract class BaseRepo<T extends Common.DBDoc> {
 
-  protected pouchdb: PouchDB.Database
+  pouchdb: PouchDB.Database
+
+  abstract init(): Promise<void>
+
+  public async replicate() {
+    let tmpDB = new PouchDB('tmp.db')
+    let dbname = this.pouchdb.name
+    let result = await this.pouchdb.info()
+    let originalTableSize = result.doc_count
+
+    PouchDB.replicate(this.pouchdb, tmpDB, {
+      filter: (doc) => {
+        if (doc._deleted)
+          return false
+        else
+          return doc
+      }
+    }).on('complete', async () => {
+      await this.pouchdb.destroy()
+      this.pouchdb = new PouchDB(dbname)
+      await this.init()
+      PouchDB.replicate(tmpDB, this.pouchdb).on('complete', async () => { await tmpDB.destroy() })
+    })
+  }
 
   public async search(field?: string, query?: string, returnFields?: Array<string>) {
-    let request: any= {
+    let request: PouchDB.Find.FindRequest<any> = {
       selector: {
         _id: { $ne: /_design\/idx/ },
       },
@@ -17,8 +40,9 @@ export default class BaseRepo<T extends Common.DBDoc> {
     if (query != null) {
       request.selector[field] = { $regex: new RegExp(`${query}`) }
     }
-
-    return this.find(request)
+    let result = await this.find(request)
+    result.forEach(it => { delete it._rev })
+    return result
   }
 
   public async get(field: string, query: string, returnFields?: Array<string>) {

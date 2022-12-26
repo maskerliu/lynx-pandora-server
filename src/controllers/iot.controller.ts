@@ -1,9 +1,8 @@
-import { Autowired, BizCode, BizContext, BodyParam, Controller, Get, Post, QueryParam } from 'lynx-express-mvc'
-import { IOT } from '../models/iot.model'
+import { Autowired, BizContext, BodyParam, Controller, Get, Post, QueryParam } from 'lynx-express-mvc'
+import { IOT, RemoteAPI } from '../models'
 import CompanyService from '../service/company.service'
 import DeviceMgrService from '../service/device.service'
 
-import { RemoteAPI } from '../models/api.const'
 
 @Controller(RemoteAPI.IOT.BasePath)
 export default class IOTMgrController {
@@ -34,6 +33,11 @@ export default class IOTMgrController {
     return await this.deviceService.delete(deviceId)
   }
 
+  @Get(RemoteAPI.IOT.CompanySearch)
+  async companySearch(@QueryParam('keyword') keyword: string, context: BizContext) {
+    return await this.companyService.searchCompany(keyword)
+  }
+
   @Get(RemoteAPI.IOT.CompanyInfo)
   async companyInfo(@QueryParam('cid') cid: string, context: BizContext) {
     return await this.companyService.getCompany(cid)
@@ -59,9 +63,9 @@ export default class IOTMgrController {
     return await this.companyService.removeRole(rid)
   }
 
-  @Get(RemoteAPI.IOT.OperatorAll)
-  async allOperators(@QueryParam('cid') cid: string) {
-    return await this.companyService.getOperators(cid)
+  @Get(RemoteAPI.IOT.PagedOperators)
+  async allOperators(@QueryParam('cid') cid: string, @QueryParam('page') page: number) {
+    return await this.companyService.getOperators(cid, page)
   }
 
   @Get(RemoteAPI.IOT.OperatorMyself)
@@ -72,5 +76,10 @@ export default class IOTMgrController {
   @Post(RemoteAPI.IOT.OperatorSave)
   async saveOperator(@BodyParam('operator') operator: IOT.Operator) {
     return await this.companyService.saveOperator(operator)
+  }
+
+  @Post(RemoteAPI.IOT.OperatorDelete)
+  async deleteOperator(@BodyParam('uid') uid: string) {
+    return await this.companyService.unbindOperator(uid)
   }
 }

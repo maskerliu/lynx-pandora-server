@@ -16,6 +16,7 @@ export default class DBMgrService {
     'operator.db',
     'device.db',
     'device-data.db',
+    'im-session.db'
   ]
 
   // private dbs: Array<PouchDB.Database> = new Array()

@@ -26,7 +26,7 @@ function genPkgFile() {
   releasePkg['description'] = pkg.description
   releasePkg['main'] = pkg.main
   releasePkg['dependencies'] = pkg.dependencies
-  fs.open('../dist/', ()=>{
+  fs.open('dist/', () => {
 
   })
   fs.writeFileSync('dist/package.json', JSON.stringify(releasePkg))

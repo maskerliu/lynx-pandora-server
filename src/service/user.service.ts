@@ -1,14 +1,11 @@
+import { UploadedFile } from 'express-fileupload'
 import { Autowired, Service } from 'lynx-express-mvc'
 import md5 from 'md5'
-import { AccountRepo, UserInfoRepo } from '../repository/user.repo'
-
-import { Dubbo } from 'apache-dubbo-consumer'
-import { Zk } from 'apache-dubbo-registry'
-import { User } from '../models/user.model'
-import DubboSerives from './dubbo'
-import fileUpload, { UploadedFile } from 'express-fileupload'
 import path from 'path'
 import { STATIC_DIR } from '../common/env.const'
+import { User } from '../models/user.model'
+import { AccountRepo, UserInfoRepo } from '../repository/user.repo'
+import MQClient from './mqtt.client'
 
 @Service()
 export default class UserService {
@@ -22,10 +19,34 @@ export default class UserService {
   // })
 
   @Autowired()
-  accountRepo: AccountRepo
+  private mqClient: MQClient
 
   @Autowired()
-  userInfoRepo: UserInfoRepo
+  private accountRepo: AccountRepo
+
+  @Autowired()
+  private userInfoRepo: UserInfoRepo
+
+
+  init() {
+    this.mqClient.onIMClientMsgArrived = { thiz: this, handler: this.updateUserStatus }
+  }
+
+  async token2uid(token: string) {
+    let account = await this.accountRepo.get('token', token)
+    return account._id
+  }
+
+  async updateUserStatus(topic: string, message: any) {
+    let uid = topic.split('/').pop()
+    let profile = await this.userInfoRepo.get('uid', uid)
+    profile.onlineStatus = message.length == 0 ? User.UserOnlineStatus.Online : User.UserOnlineStatus.Offline
+    await this.userInfoRepo.update(profile)
+  }
+
+  async userOnlineStatus(uid: string) {
+    return (await this.userInfoRepo.get('uid', uid)).onlineStatus
+  }
 
   async login(phone: string, verify: string) {
     // let result = await this.dubbo.service.DataService.sayHello('dubbo-js')
@@ -44,7 +65,7 @@ export default class UserService {
       return token
     }
   }
-
+  
   async register(phone: string, pwd: string) {
     let token = null
     let account = await this.accountRepo.get('phone', phone)
@@ -56,25 +77,25 @@ export default class UserService {
         encryptPWD: pwd
       }
       let uid = await this.accountRepo.update(account)
-
     }
     return token
   }
 
   async updateUserAvatar(avatar: UploadedFile, token: string) {
-    if (avatar != null) {
-      let profile = await this.getMyProfile(token)
-      let ext = avatar.name.split('.').pop()
-      await avatar.mv(path.join(STATIC_DIR, avatar.md5 + '.' + ext))
-      profile.avatar = `//192.168.25.16:8884/_res/${avatar.md5}.${ext}`
-
-      delete profile.encryptPWD
-      delete profile.token
-      delete profile.phone
-      await this.saveUserProfile(profile, token)
-      return '头像更新成功'
+    if (avatar == null) {
+      return '头像更新失败'
     }
-    return '头像更新失败'
+
+    let profile = await this.getUserInfoByToken(token)
+    let ext = avatar.name.split('.').pop()
+    await avatar.mv(path.join(STATIC_DIR, avatar.md5 + '.' + ext))
+    profile.avatar = `//192.168.25.16:8884/_res/${avatar.md5}.${ext}`
+
+    delete profile.encryptPWD
+    delete profile.token
+    delete profile.phone
+    await this.saveUserProfile(profile, token)
+    return '头像更新成功'
   }
 
   async saveUserProfile(profile: User.Profile, token: string) {
@@ -84,23 +105,34 @@ export default class UserService {
     return await this.userInfoRepo.update(profile)
   }
 
-
-  async getMyProfile(token: string) {
-    let account = await this.accountRepo.get('token', token)
-    return await this.genFinalProfile(account)
-  }
-
   async findUser(phone: string) {
     let account = await this.accountRepo.get('phone', phone)
-    return await this.genFinalProfile(account)
+    return await this.genProfile(account)
+  }
+
+  async searchUser(name: string) {
+    let profiles = await this.userInfoRepo.search('name', name)
+    let docs = profiles.map(item => { return { id: item.uid } })
+    let dbResp = await this.userInfoRepo.pouchdb.bulkGet({ docs })
+    console.log(dbResp.results)
+    return profiles
+  }
+
+  async bulkUsers(uids: Array<string>) {
+    return this.userInfoRepo.bulkUsers(uids)
+  }
+
+  async getUserInfoByToken(token: string) {
+    let account = await this.accountRepo.get('token', token)
+    return await this.genProfile(account)
   }
 
   async getUserInfo(uid: string) {
     let account = await this.accountRepo.get('_id', uid)
-    return await this.genFinalProfile(account)
+    return await this.genProfile(account)
   }
 
-  private async genFinalProfile(account?: User.Account) {
+  private async genProfile(account?: User.Account) {
     if (account == null) throw '未找到该用户'
     let profile = await this.userInfoRepo.get('uid', account._id)
     if (profile == null) profile = { uid: account._id }
@@ -112,6 +144,32 @@ export default class UserService {
   }
 
   private genToken(uid: string): string {
-    return md5(uid)
+    return md5(`${uid}_${new Date().getTime()}`)
+  }
+
+  private async genMockUsers() {
+    let phones = []
+    for (let i = 0; i < 80; ++i) {
+      let end = i.toString().padStart(2, '0')
+      // await CommonApi.login(`136518888${end}`, '2222')
+    }
+
+    let opt: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        phone: { $lt: 13651888880 }
+      },
+    }
+    let result = await this.accountRepo.pouchdb.find(opt)
+    let profiles = result.docs.map(it => {
+      return { uid: it._id, name: `mock_${it._id.split('-')[0]}` }
+    })
+    opt = {
+      selector: {
+        name: { $regex: 'mock_' }
+      }
+    }
+    result = await this.userInfoRepo.pouchdb.find(opt)
+    console.log(result.docs)
+    // await this.userInfoRepo.pouchdb.bulkDocs(profiles)
   }
 }

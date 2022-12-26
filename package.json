@@ -9,8 +9,7 @@
         "build": "tsc -p tsconfig.json",
         "build:umd": "node --loader ts-node/esm --experimental-json-modules scripts/builder.ts",
         "dev": "node --experimental-specifier-resolution=node --loader ts-node/esm --experimental-json-modules scripts/runner.dev.ts",
-        "start": "node --experimental-specifier-resolution=node --loader ts-node/esm --experimental-json-modules",
-        "devd": "node-hot --config scripts/webpack.config.ts"
+        "start": "node --experimental-specifier-resolution=node --loader ts-node/esm --experimental-json-modules"
     },
     "dependencies": {
         "apache-dubbo-consumer": "^4.0.0",
@@ -18,7 +17,7 @@
         "compression": "^1.7.4",
         "express-static-gzip": "^2.1.7",
         "cors": "^2.8.5",
-        "lynx-express-mvc": "1.0.27",
+        "lynx-express-mvc": "1.0.31",
         "md5": "^2.3.0",
         "mqtt": "^4.3.7",
         "sockjs": "^0.3.24",
@@ -51,7 +50,6 @@
         "mini-css-extract-plugin": "2.5.3",
         "multispinner": "^0.2.1",
         "node-loader": "^2.0.0",
-        "node-hot-loader": "^1.21.9",
         "node-polyfill-webpack-plugin": "^2.0.1",
         "throttle-typescript": "^1.1.0",
         "ts-loader": "^9.3.1",

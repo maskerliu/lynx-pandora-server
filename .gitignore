@@ -13,3 +13,4 @@ package-lock.json
 .vscode/*
 *.log
 user_data/**/*
+static/tmp
