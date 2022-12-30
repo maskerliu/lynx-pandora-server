@@ -1,35 +1,86 @@
+import { UploadedFile } from 'express-fileupload'
 import { Autowired, Service } from 'lynx-express-mvc'
+import path from 'path'
+import { STATIC_DIR } from '../common/env.const'
 import { Chatroom } from '../models'
-import { ChatRoomRepo, GiftRepo } from '../repository/chatroom.repo'
+import { ChatroomRepo, GiftRepo, RoomCollectionRepo, SeatInfoRepo, SeatReqRepo } from '../repository/chatroom.repo'
+import CustomEmojis from './emoji.chatroom.json'
+import ToolEmojis from './emoji.tools.json'
 import Gift from './gifts.data.json'
 import MQClient from './mqtt.client'
 import UserService from './user.service'
 
 
 @Service()
-export class ChatRoomService {
+export class ChatroomService {
 
   @Autowired()
-  useService: UserService
+  userService: UserService
 
   @Autowired()
   mqClient: MQClient
 
   @Autowired()
-  chatroomRepo: ChatRoomRepo
+  chatroomRepo: ChatroomRepo
+
+  @Autowired()
+  seatInfoRepo: SeatInfoRepo
+
+  @Autowired()
+  seatReqRepo: SeatReqRepo
 
   @Autowired()
   giftRepo: GiftRepo
 
-  async getRoomInfo(rid: string) {
+  @Autowired()
+  roomCollectionRepo: RoomCollectionRepo
+
+  async getRoomInfo(roomId: string) {
+
+    let room = await this.chatroomRepo.get('_id', roomId)
+
     return this.mockRoomInfo()
   }
 
-  async saveRoom(room: Chatroom.Room) {
+  async save(room: Chatroom.Room, cover: UploadedFile, token: string) {
+    let profile = await this.userService.getUserInfoByToken(token)
 
+    if (cover != null) {
+      let ext = cover.name.split('.').pop()
+      await cover.mv(path.join(STATIC_DIR, cover.md5 + '.' + ext))
+      room.cover = `//192.168.25.16:8884/_res/${cover.md5}.${ext}`
+    }
+    room.owner = profile.uid
+
+    if (room._id) {
+      let existRoom = await this.chatroomRepo.get('_id', room._id)
+      room._rev = existRoom._rev
+      return await this.chatroomRepo.updateRoom(room)
+    }
+    let existRooms = await this.chatroomRepo.getRooms(profile.uid, room.type)
+    if (existRooms.length > 0) {
+      throw '已有同类型频道，请删除后再创建'
+    } else {
+      let roomId = await this.chatroomRepo.saveRoom(room)
+      let seats = this.genRoomSeats(roomId, room.type)
+      await this.seatInfoRepo.saveRoomSeats(roomId, seats)
+    }
   }
 
   async getMyCollections(token: string) {
+
+    let uid = await this.userService.token2uid(token)
+    let collections = await this.roomCollectionRepo.getCollectionRooms(uid)
+
+    let roomIds = collections.map(it => { return it.roomId })
+    let result = await this.chatroomRepo.bulkRooms(roomIds)
+
+    result.forEach(it => {
+      delete it._rev
+    })
+
+    return result
+
     const data: Array<Chatroom.Room> = [
       {
         tags: [
@@ -67,7 +118,30 @@ export class ChatRoomService {
     return data
   }
 
+  async collectRoom(roomId: string, token: string) {
+    let uid = await this.userService.token2uid(token)
+
+    let collection: Chatroom.RoomCollection = {
+      uid, roomId,
+      timestamp: new Date().getTime()
+    }
+
+    await this.roomCollectionRepo.updateCollection(collection)
+  }
+
+  async getMyRooms(token: string) {
+    let profile = await this.userService.getUserInfoByToken(token)
+    let rooms = await this.chatroomRepo.getRooms(profile.uid)
+    rooms.forEach(it => {
+      it.ownerName = profile.name
+    })
+    return rooms
+  }
+
   async getRecommend(token: string) {
+
+    let rooms = await this.chatroomRepo.search()
+
     const data: Array<Chatroom.Room> = [
       {
         tags: [
@@ -175,7 +249,11 @@ export class ChatRoomService {
         notice: '[推理] 林七天天开心'
       }
     ]
-    return data
+    return [...rooms, ...data]
+  }
+
+  async getEmojiGroups(roomId: string) {
+    return [{ name: '工具', emojis: ToolEmojis }, { name: '常用', emojis: CustomEmojis }] as Array<Chatroom.EmojiGroup>
   }
 
   async getGiftInfo(rid: string) {
@@ -185,21 +263,183 @@ export class ChatRoomService {
   }
 
   async enter(roomId: string, token: string) {
-    return this.mockRoomInfo()
+
+    let uid = await this.userService.token2uid(token)
+    let room = await this.chatroomRepo.get('_id', roomId)
+    let profile = await this.userService.getUserInfo(room.owner)
+    let seats = await this.seatInfoRepo.getRoomSeats(roomId)
+
+    seats.forEach(it => {
+      delete it._rev
+    })
+
+    let isCollected = await this.roomCollectionRepo.isCollected(uid, roomId)
+    room.seats = seats
+    room.ownerName = profile.name
+    room.isStared = isCollected
+
+    let masters = await this.userService.bulkUsers(room.masters)
+
+    room.displayMasters = masters
+
+    delete room._rev
+    return room //  this.mockRoomInfo()
+  }
+
+  async leave(roomId: string, token: string) {
+
   }
 
   async reward(roomId: string, giftId: string, count: number, receivers: string[], token: string) {
-    let from = await this.useService.token2uid(token)
-    let messages = receivers.map(it => {
+    let from = await this.userService.getUserInfoByToken(token)
+    let rewardMsgs = receivers.map(it => {
       return {
         type: Chatroom.MsgType.Reward,
-        from,
-        content: { to: it, giftId, count }
+        from: from.uid,
+        data: { to: it, giftId, count }
       } as Chatroom.Message
     })
-    this.mqClient.sendMsg(`_room/${roomId}`, JSON.stringify(messages))
+
+    let sysMsgs = []
+
+    for (let it of receivers) {
+      let to = await this.userService.getUserInfo(it)
+      let content = `<span style="font-size: 0.8rem; font-style: italic; color: #8e44ad;"> ${from.name} </span> 向 <span style="font-size: 0.8rem; font-style: italic; color: #e67e22;"> ${to.name} </span> 赠送了 <span style="font-size: 1rem; font-style: italic; font-weight: bold; color: #f39c12;"> ${count} </span> 个 <span>${Gift[giftId].title}</span>`
+      sysMsgs.push({
+        type: Chatroom.MsgType.Sys,
+        data: { content } as Chatroom.SysInfoContent
+      })
+    }
+
+    this.mqClient.sendMsg(`_room/${roomId}`, JSON.stringify([...rewardMsgs, ...sysMsgs]))
+    return 'success'
   }
 
+  async seatRequests(roomId: string) {
+    let reqs = await this.seatReqRepo.getSeatReq(roomId)
+    let uids = reqs.map(it => { return it.uid })
+    let users = await this.userService.bulkUsers(uids)
+
+    let result = users.map(user => {
+      let req = reqs.find((it) => { return it.uid == user.uid })
+
+      return Object.assign(user, req)
+    })
+    return result
+  }
+
+  async seatReq(roomId: string, seq: number, code: Chatroom.MsgType, token: string) {
+    let uid = await this.userService.token2uid(token)
+    switch (code) {
+      case Chatroom.MsgType.SeatReq: { //
+        let req: Chatroom.SeatReq = {
+          uid, roomId, seatSeq: seq,
+          timestamp: new Date().getTime()
+        }
+        await this.seatReqRepo.addSeatReq(req)
+        return '正在排麦中'
+      }
+      case Chatroom.MsgType.SeatReqCancel: {
+        let req: Chatroom.SeatReq = {
+          uid, roomId, seatSeq: seq
+        }
+        await this.seatReqRepo.removeSeatReq(req)
+        return 'success'
+      }
+      case Chatroom.MsgType.SeatOn:
+        return await this.seatOn(roomId, seq, uid, token)
+      case Chatroom.MsgType.SeatDown:
+        return await this.seatDown(roomId, seq, uid)
+    }
+  }
+
+  async seatMgr(roomId: string, seq: number, uid: string, code: Chatroom.MsgType, token: string) {
+
+    switch (code) {
+      case Chatroom.MsgType.SeatOn:
+        return await this.seatOn(roomId, seq, uid, token)
+      case Chatroom.MsgType.SeatDown:
+        return await this.seatDown(roomId, seq, uid)
+    }
+  }
+
+  async seatOn(roomId: string, seatSeq: number, uid: string, token: string) {
+
+    let req: Chatroom.SeatReq = {
+      uid, roomId, seatSeq
+    }
+
+    let profile = await this.userService.getUserInfo(uid)
+
+    let seat = await this.seatInfoRepo.getRoomSeat(roomId, seatSeq)
+    if (seat != null) {
+      seat.userInfo = profile
+      await this.seatInfoRepo.updateSeat(seat)
+    }
+
+    await this.seatReqRepo.removeSeatReq(req)
+
+    let msg: Chatroom.Message = {
+      type: Chatroom.MsgType.SeatOn,
+      data: { uid, seq: seatSeq } as Chatroom.SeatContent
+    }
+    this.mqClient.sendMsg(`_room/${roomId}`, JSON.stringify(msg))
+  }
+
+  async seatDown(roomId: string, seq: number, uid: string) {
+    let seat = await this.seatInfoRepo.getRoomSeat(roomId, seq)
+    if (seat != null && seat.userInfo?.uid == uid) {
+      delete seat.userInfo
+      await this.seatInfoRepo.updateSeat(seat)
+    }
+    return 'success'
+  }
+
+  async sendMsg(roomId: string, msg: Chatroom.Message, token: string) {
+    let profile = await this.userService.getUserInfoByToken(token)
+    msg.from = profile.uid;
+    (msg.data as Chatroom.ChatContent).name = profile.name;
+    (msg.data as Chatroom.ChatContent).avatar = profile.avatar;
+    this.mqClient.sendMsg(`_room/${roomId}`, JSON.stringify([msg]))
+
+    return 'send success'
+  }
+
+  private genRoomSeats(roomId: string, type: Chatroom.RoomType) {
+    let guestSeatCount = 0
+    let seats = Array<Chatroom.Seat>()
+    let seat: Chatroom.Seat = {
+      roomId,
+      seq: 0,
+      type: Chatroom.SeatType.Host,
+      isLocked: false,
+      isMute: false,
+    }
+    seats.push(seat)
+    switch (type) {
+      case Chatroom.RoomType.DianTai:
+        guestSeatCount = 2
+        break
+      case Chatroom.RoomType.JiaoYou:
+        guestSeatCount = 4
+        break
+
+      case Chatroom.RoomType.YuLe:
+        guestSeatCount = 7
+        break
+    }
+    for (let i = 1; i <= guestSeatCount; ++i) {
+      seat = {
+        roomId,
+        seq: i,
+        type: Chatroom.SeatType.Guest,
+        isLocked: false,
+        isMute: false,
+      }
+      seats.push(seat)
+    }
+    return seats
+  }
 
   private mockRoomInfo() {
     let seats: Array<Chatroom.Seat> = [
@@ -271,6 +511,7 @@ export class ChatRoomService {
       notice: '无论我们能活多久，我们能够享受的只有无法分割的此刻，此外别无其他',
       // background: 'https://yppphoto.hibixin.com/yppphoto/75944c2a25c6421c886e4e321e4e79bb.jpg',
       seats,
+      type: Chatroom.RoomType.DianTai
 
     }
     return room

@@ -50,12 +50,12 @@ export default abstract class BaseRepo<T extends Common.DBDoc> {
       selector: {
         _id: { $ne: /_design\/idx/ },
       },
-      limit: 15,
+      limit: 1,
       fields: returnFields
     }
     request.selector[field] = { $eq: query }
     let result = await this.find(request)
-    return result[0]
+    return result[0] as T
   }
 
   public async find(request: PouchDB.Find.FindRequest<any>) {

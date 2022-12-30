@@ -55,12 +55,19 @@ export namespace RemoteAPI {
     BasePath: '/room',
     Recommend: '/recommend', // 推荐房间
     MyCollections: '/myCollections',
+    MyRooms: '/myRooms',
     RoomInfo: '/info', // 房间基础信息
     RoomSave: '/save',
     RoomDelete: '/delete',
+    SeatRequests: '/seatRequests',
+    SeatReq: '/seatReq', 
+    SeatMgr: '/seatMgr', // 抱上麦
+    Collect: '/collect', // （取消）收藏频道
+    Emojis: '/emojis',
     Gifts: '/gifts', // 礼物信息
     Enter: '/enter',
     Leave: '/leave',
     Reward: '/reward',
+    SendMsg: '/sendMsg',
   }
 }

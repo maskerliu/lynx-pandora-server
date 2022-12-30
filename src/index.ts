@@ -92,7 +92,6 @@ export default class BizServer {
   }
 
   private handleRequest(req: any, resp: Response) {
-    console.log('hello')
     this.bizRouter.route(req, resp)
   }
 
