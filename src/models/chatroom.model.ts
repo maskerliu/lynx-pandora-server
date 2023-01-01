@@ -28,6 +28,7 @@ export namespace Chatroom {
     status?: RoomStatus
     isStared?: boolean
     notice?: string
+    welcome?: string
     background?: string
     type?: RoomType
     tags?: Array<string>
@@ -85,13 +86,15 @@ export namespace Chatroom {
     SeatOn = 4003, // 上麦
     SeatDown = 4004, // 下麦
     SeatMute = 4005, // 闭麦
-    SeatLock = 4006, // 上锁
+    SeatUnmute = 4006, // 开麦
+    SeatLock = 4007, // 锁住座位
+    SeatUnlock = 4008, // 开放座位
     Sys = 6000, // 系统消息
   }
 
   export interface ChatContent {
-    name: string
-    avatar: string
+    name?: string
+    avatar?: string
     content: string
   }
 
@@ -111,7 +114,9 @@ export namespace Chatroom {
   }
 
   export interface SeatContent {
-    uid: string
+    uid?: string
+    name?: string
+    avatar?: string
     seq: number
   }
 

@@ -39,7 +39,7 @@ export class ChatroomService {
 
     let room = await this.chatroomRepo.get('_id', roomId)
 
-    return this.mockRoomInfo()
+    return room
   }
 
   async save(room: Chatroom.Room, cover: UploadedFile, token: string) {
@@ -80,42 +80,6 @@ export class ChatroomService {
     })
 
     return result
-
-    const data: Array<Chatroom.Room> = [
-      {
-        tags: [
-          '电台',
-        ],
-        cover: 'https://yppphoto.hellobixin.com/upload/0d63c840-796e-11ed-83f1-83d7999600fa.png',
-        _id: '27909f54b0304b73be7a66deb54bfd50',
-        title: '哈尼播客🎧招募优质NJ',
-        owner: '消失的狐狸',
-        notice: ''
-      },
-      {
-        tags: [
-          '电台',
-        ],
-        cover: 'https://yppphoto.hellobixin.com/upload/966493d0-6db7-11ed-92d7-9f05510f8fc2.png',
-        _id: '8329cb1b01224120adf9fa8452746479',
-        title: 'Link播客🎧招聘小可爱',
-        owner: '乐园🧸',
-        notice: ''
-      },
-      {
-        tags: [
-          'vue',
-          'webpack',
-          'npm'
-        ],
-        cover: 'https://p6.hellobixin.com/bx-user/7b290d2ba15140ddbb48bb7be420432e.jpg',
-        _id: '5d4f9c15910d4cd2b6d00ca38158d28f',
-        title: '元气播客🎧清流是烟火的崽崽',
-        owner: '小江南rt',
-        notice: '01-20 2021'
-      },
-    ]
-    return data
   }
 
   async collectRoom(roomId: string, token: string) {
@@ -249,7 +213,7 @@ export class ChatroomService {
         notice: '[推理] 林七天天开心'
       }
     ]
-    return [...rooms, ...data]
+    return [...rooms]
   }
 
   async getEmojiGroups(roomId: string) {
@@ -330,6 +294,7 @@ export class ChatroomService {
 
   async seatReq(roomId: string, seq: number, code: Chatroom.MsgType, token: string) {
     let uid = await this.userService.token2uid(token)
+
     switch (code) {
       case Chatroom.MsgType.SeatReq: { //
         let req: Chatroom.SeatReq = {
@@ -346,52 +311,109 @@ export class ChatroomService {
         await this.seatReqRepo.removeSeatReq(req)
         return 'success'
       }
-      case Chatroom.MsgType.SeatOn:
-        return await this.seatOn(roomId, seq, uid, token)
-      case Chatroom.MsgType.SeatDown:
-        return await this.seatDown(roomId, seq, uid)
+      case Chatroom.MsgType.SeatOn: {
+        let room = await this.chatroomRepo.get('_id', roomId)
+        let seat = await this.seatInfoRepo.getRoomSeat(roomId, seq)
+        if (room.masters.includes(uid)) {
+          return await this.seatOn(seat, uid)
+        } else {
+          throw '你没有直接上麦权限，请排麦'
+        }
+      }
+      case Chatroom.MsgType.SeatDown: {
+        let seat = await this.seatInfoRepo.getRoomSeat(roomId, seq)
+        return await this.seatDown(seat, uid)
+      }
     }
   }
 
   async seatMgr(roomId: string, seq: number, uid: string, code: Chatroom.MsgType, token: string) {
+    let mySelf = await this.userService.token2uid(token)
+    let room = await this.chatroomRepo.get('_id', roomId)
+    let seat = await this.seatInfoRepo.getRoomSeat(roomId, seq)
+
+    if (seat == null) throw '座位信息错误'
+    if (!room.masters.includes(mySelf)) throw '你没有权限操作房间座位'
 
     switch (code) {
       case Chatroom.MsgType.SeatOn:
-        return await this.seatOn(roomId, seq, uid, token)
+        return await this.seatOn(seat, uid)
       case Chatroom.MsgType.SeatDown:
-        return await this.seatDown(roomId, seq, uid)
+        return await this.seatDown(seat, uid)
+      case Chatroom.MsgType.SeatLock:
+      case Chatroom.MsgType.SeatUnlock:
+        return await this.seatLock(seat, code)
+      case Chatroom.MsgType.SeatMute:
+      case Chatroom.MsgType.SeatUnmute:
+        return await this.mute(seat, code)
     }
   }
 
-  async seatOn(roomId: string, seatSeq: number, uid: string, token: string) {
+  private async seatOn(seat: Chatroom.Seat, uid: string) {
 
     let req: Chatroom.SeatReq = {
-      uid, roomId, seatSeq
+      uid, roomId: seat.roomId, seatSeq: seat.seq
     }
 
     let profile = await this.userService.getUserInfo(uid)
 
-    let seat = await this.seatInfoRepo.getRoomSeat(roomId, seatSeq)
-    if (seat != null) {
-      seat.userInfo = profile
-      await this.seatInfoRepo.updateSeat(seat)
+    if (seat.userInfo != null) {
+      throw '当前座位上有嘉宾，请先下麦'
     }
 
+    seat.userInfo = profile
+    await this.seatInfoRepo.updateSeat(seat)
     await this.seatReqRepo.removeSeatReq(req)
 
     let msg: Chatroom.Message = {
       type: Chatroom.MsgType.SeatOn,
-      data: { uid, seq: seatSeq } as Chatroom.SeatContent
+      data: { uid, name: profile.name, avatar: profile.avatar, seq: seat.seq } as Chatroom.SeatContent
     }
-    this.mqClient.sendMsg(`_room/${roomId}`, JSON.stringify(msg))
+    this.mqClient.sendMsg(`_room/${seat.roomId}`, JSON.stringify([msg]))
+
+    return 'success'
   }
 
-  async seatDown(roomId: string, seq: number, uid: string) {
-    let seat = await this.seatInfoRepo.getRoomSeat(roomId, seq)
-    if (seat != null && seat.userInfo?.uid == uid) {
-      delete seat.userInfo
-      await this.seatInfoRepo.updateSeat(seat)
+  private async seatDown(seat: Chatroom.Seat, uid: string) {
+    if (seat.userInfo.uid != uid) {
+      throw '座位信息错误'
     }
+
+    delete seat.userInfo
+    await this.seatInfoRepo.updateSeat(seat)
+
+    let msg: Chatroom.Message = {
+      type: Chatroom.MsgType.SeatDown,
+      data: { uid, seq: seat.seq } as Chatroom.SeatContent
+    }
+    this.mqClient.sendMsg(`_room/${seat.roomId}`, JSON.stringify([msg]))
+
+    return 'success'
+  }
+
+  private async mute(seat: Chatroom.Seat, code: Chatroom.MsgType) {
+    seat.isMute = code == Chatroom.MsgType.SeatMute
+    await this.seatInfoRepo.updateSeat(seat)
+    let msg: Chatroom.Message = {
+      type: code,
+      data: { seq: seat.seq } as Chatroom.SeatContent
+    }
+    this.mqClient.sendMsg(`_room/${seat.roomId}`, JSON.stringify([msg]))
+    return 'success'
+  }
+
+  private async seatLock(seat: Chatroom.Seat, code: Chatroom.MsgType) {
+    seat.isLocked = code == Chatroom.MsgType.SeatLock
+    if (seat.isLocked) {
+      delete seat.userInfo
+    }
+    await this.seatInfoRepo.updateSeat(seat)
+
+    let msg: Chatroom.Message = {
+      type: code,
+      data: { seq: seat.seq } as Chatroom.SeatContent
+    }
+    this.mqClient.sendMsg(`_room/${seat.roomId}`, JSON.stringify([msg]))
     return 'success'
   }
 
@@ -439,81 +461,5 @@ export class ChatroomService {
       seats.push(seat)
     }
     return seats
-  }
-
-  private mockRoomInfo() {
-    let seats: Array<Chatroom.Seat> = [
-      {
-        seq: 0,
-        type: Chatroom.SeatType.Guest,
-        isMute: false,
-        isLocked: false,
-        userInfo: {
-          uid: '4e6434d1-5910-46c3-879d-733c33ded257', name: 'zhangsan', avatar: 'https://p6.hellobixin.com/bx-user/15433e025c5b435db8da4ad9e74efa20.jpg'
-        }
-      },
-      {
-        seq: 1,
-        type: Chatroom.SeatType.Guest,
-        isMute: false,
-        isLocked: false,
-        userInfo: {
-          uid: '8bb7c7bd-18b3-4aa4-be07-2de3caa2e19f', name: '里斯', avatar: 'https://yppphoto.hellobixin.com/image/EF4A344C-3F0C-422D-A9FD-07F9045F9258.jpg'
-        }
-      },
-      {
-        seq: 2,
-        type: Chatroom.SeatType.Guest,
-        isMute: true,
-        isLocked: false,
-        userInfo: {
-          uid: '8f4e7438-4285-4268-910c-3898fb8d6d96', name: 'zhangsan', avatar: 'https://yppphoto.hellobixin.com/yppphoto/0140f013-88b2-43a4-b0ec-51fc0eaa8ec3.png'
-        }
-      },
-      {
-        seq: 3,
-        type: Chatroom.SeatType.Guest,
-        isMute: false,
-        isLocked: false,
-        userInfo: { uid: '', name: 'zhangsan' }
-      },
-      {
-        seq: 4,
-        type: Chatroom.SeatType.Guest,
-        isMute: false,
-        isLocked: false,
-      },
-      {
-        seq: 5,
-        type: Chatroom.SeatType.Guest,
-        isMute: false,
-        isLocked: false,
-      },
-      {
-        seq: 6,
-        type: Chatroom.SeatType.Guest,
-        isMute: false,
-        isLocked: true,
-      },
-      {
-        seq: 7,
-        type: Chatroom.SeatType.Guest,
-        isMute: false,
-        isLocked: false,
-      }
-    ]
-
-    let room: Chatroom.Room = {
-      _id: '05586a80843f11ed8a1975b7feb9abdf',
-      title: '哈尼播客🎧招募优质NJ',
-      cover: 'https://yppphoto.hellobixin.com/upload/0d63c840-796e-11ed-83f1-83d7999600fa.png',
-      owner: '消失的狐狸',
-      notice: '无论我们能活多久，我们能够享受的只有无法分割的此刻，此外别无其他',
-      // background: 'https://yppphoto.hibixin.com/yppphoto/75944c2a25c6421c886e4e321e4e79bb.jpg',
-      seats,
-      type: Chatroom.RoomType.DianTai
-
-    }
-    return room
   }
 }
