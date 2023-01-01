@@ -252,6 +252,31 @@ export class ChatroomService {
 
   async leave(roomId: string, token: string) {
 
+    let profile = await this.userService.getUserInfoByToken(token)
+    let seats = await this.seatInfoRepo.getRoomSeats(roomId)
+
+    let onSeat = seats.find(it => { return it.userInfo?.uid == profile.uid })
+
+    let msgs = []
+
+    if (onSeat) {
+      onSeat.userInfo = null
+      await this.seatInfoRepo.updateSeat(onSeat)
+
+      let seatDownMsg = {
+        type: Chatroom.MsgType.SeatDown,
+        data: { seq: onSeat.seq } as Chatroom.SeatContent
+      }
+
+      msgs.push(seatDownMsg)
+    }
+
+    let msg: Chatroom.Message = {
+      type: Chatroom.MsgType.Exit,
+      data: { content: `${profile.name} 离开了房间` } as Chatroom.SysInfoContent
+    }
+    msgs.push(msg)
+    this.mqClient.sendMsg(`_room/${roomId}`, JSON.stringify(msgs))
   }
 
   async reward(roomId: string, giftId: string, count: number, receivers: string[], token: string) {

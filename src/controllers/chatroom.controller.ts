@@ -60,6 +60,11 @@ export class ChatRoomController {
     return await this.chatroomService.enter(data.roomId, context.token)
   }
 
+  @Post(RemoteAPI.Chatroom.Leave)
+  async leaveRoom(@BodyParam()data:{roomId:string}, context:BizContext) {
+    return await this.chatroomService.leave(data.roomId, context.token)
+  }
+
   @Post(RemoteAPI.Chatroom.RoomSave)
   async saveRoom(@BodyParam('room') room: Chatroom.Room, @FileParam('cover') cover: UploadedFile, context: BizContext) {
     return await this.chatroomService.save(room, cover, context.token)
