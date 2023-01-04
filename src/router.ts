@@ -6,6 +6,7 @@ import './controllers/user.controller'
 import './controllers/iot.controller'
 import './controllers/im.controller'
 import './controllers/chatroom.controller'
+import './controllers/square.controller'
 
 @Router()
 export default class BizRouter {

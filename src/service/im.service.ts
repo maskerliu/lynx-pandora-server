@@ -1,5 +1,4 @@
 import { UploadedFile } from 'express-fileupload'
-import { stat } from 'fs'
 import { Autowired, Service } from 'lynx-express-mvc'
 import md5 from 'md5'
 import path from 'path'
@@ -58,7 +57,7 @@ export default class IMService {
     if (thumb != null) {
       let ext = thumb.name.split('.').pop()
       await thumb.mv(path.join(STATIC_DIR, thumb.md5 + '.' + ext))
-      session.thumb = `//192.168.25.16:8884/_res/${thumb.md5}.${ext}`
+      session.thumb = `/_res/${thumb.md5}.${ext}`
     }
 
     await this.sessionRepo.update(session)
@@ -72,8 +71,6 @@ export default class IMService {
     let uid = await this.userService.token2uid(token)
     return await this.messageRepo.bulkGet(uid)
   }
-
-
 
   /**
    * 
@@ -107,7 +104,7 @@ export default class IMService {
     if (file != null) {
       let ext = file.name.split('.').pop()
       await file.mv(path.join(STATIC_DIR, file.md5 + '.' + ext))
-      message.content = `//192.168.25.16:8884/_res/${file.md5}.${ext}`
+      message.content = `/_res/${file.md5}.${ext}`
     }
 
     if (session == null) { throw '当前会话已失效' }

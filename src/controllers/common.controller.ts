@@ -1,4 +1,5 @@
 import { Autowired, BodyParam, Controller, Get, Post, QueryParam } from 'lynx-express-mvc'
+import { getLocalIP } from '../common/common.utils'
 import { Lynx_Mqtt_Broker } from '../common/env.const'
 import { Common, RemoteAPI } from '../models'
 import DBMgrService from '../service/dbmgr.service'
@@ -15,6 +16,7 @@ export default class CommonController {
 
     return {
       broker: Lynx_Mqtt_Broker,
+      staticServer: getLocalIP() + ':8884',
       test: 'hello world'
     }
   }
@@ -38,5 +40,5 @@ export default class CommonController {
   async deleteDoc(@QueryParam('db') db: string, @BodyParam() doc: Common.DBDoc) {
     return await this.dbMgrService.deleteDoc(db, doc._id, doc._rev)
   }
-  
+
 }

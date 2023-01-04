@@ -1,28 +1,18 @@
 import { UploadedFile } from 'express-fileupload'
 import { Autowired, BizContext, BodyParam, Controller, FileParam, Get, Post, QueryParam } from 'lynx-express-mvc'
 import { Chatroom, RemoteAPI } from '../models'
-import { ChatroomRepo } from '../repository/chatroom.repo'
 import { ChatroomService } from '../service/chatroom.service'
 
 @Controller(RemoteAPI.Chatroom.BasePath)
-export class ChatRoomController {
+export class ChatroomController {
 
   @Autowired()
   chatroomService: ChatroomService
 
-  @Get(RemoteAPI.Chatroom.MyCollections)
-  async myCollections(context: BizContext) {
-    return await this.chatroomService.getMyCollections(context.token)
-  }
-
+  
   @Get(RemoteAPI.Chatroom.MyRooms)
   async myRooms(context: BizContext) {
     return await this.chatroomService.getMyRooms(context.token)
-  }
-
-  @Get(RemoteAPI.Chatroom.Recommend)
-  async recommends(context: BizContext) {
-    return await this.chatroomService.getRecommend(context.token)
   }
 
   @Get(RemoteAPI.Chatroom.RoomInfo)
@@ -61,7 +51,7 @@ export class ChatRoomController {
   }
 
   @Post(RemoteAPI.Chatroom.Leave)
-  async leaveRoom(@BodyParam()data:{roomId:string}, context:BizContext) {
+  async leaveRoom(@BodyParam() data: { roomId: string }, context: BizContext) {
     return await this.chatroomService.leave(data.roomId, context.token)
   }
 

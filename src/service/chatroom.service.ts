@@ -1,6 +1,7 @@
 import { UploadedFile } from 'express-fileupload'
 import { Autowired, Service } from 'lynx-express-mvc'
 import path from 'path'
+import { getLocalIP } from '../common/common.utils'
 import { STATIC_DIR } from '../common/env.const'
 import { Chatroom } from '../models'
 import { ChatroomRepo, GiftRepo, RoomCollectionRepo, SeatInfoRepo, SeatReqRepo } from '../repository/chatroom.repo'
@@ -48,7 +49,7 @@ export class ChatroomService {
     if (cover != null) {
       let ext = cover.name.split('.').pop()
       await cover.mv(path.join(STATIC_DIR, cover.md5 + '.' + ext))
-      room.cover = `//192.168.25.16:8884/_res/${cover.md5}.${ext}`
+      room.cover = `/_res/${cover.md5}.${ext}`
     }
     room.owner = profile.uid
 
@@ -67,9 +68,7 @@ export class ChatroomService {
     }
   }
 
-  async getMyCollections(token: string) {
-
-    let uid = await this.userService.token2uid(token)
+  async getMyCollections(uid: string) {
     let collections = await this.roomCollectionRepo.getCollectionRooms(uid)
 
     let roomIds = collections.map(it => { return it.roomId })
@@ -102,7 +101,7 @@ export class ChatroomService {
     return rooms
   }
 
-  async getRecommend(token: string) {
+  async getRecommend(uid: string) {
 
     let rooms = await this.chatroomRepo.search()
 
@@ -339,7 +338,7 @@ export class ChatroomService {
       case Chatroom.MsgType.SeatOn: {
         let room = await this.chatroomRepo.get('_id', roomId)
         let seat = await this.seatInfoRepo.getRoomSeat(roomId, seq)
-        if (room.masters.includes(uid)) {
+        if (room.masters.includes(uid) || room.owner == uid) {
           return await this.seatOn(seat, uid)
         } else {
           throw '你没有直接上麦权限，请排麦'
@@ -353,12 +352,12 @@ export class ChatroomService {
   }
 
   async seatMgr(roomId: string, seq: number, uid: string, code: Chatroom.MsgType, token: string) {
-    let mySelf = await this.userService.token2uid(token)
+    let myself = await this.userService.token2uid(token)
     let room = await this.chatroomRepo.get('_id', roomId)
     let seat = await this.seatInfoRepo.getRoomSeat(roomId, seq)
 
     if (seat == null) throw '座位信息错误'
-    if (!room.masters.includes(mySelf)) throw '你没有权限操作房间座位'
+    if (!room.masters.includes(myself) && room.owner != myself) throw '你没有权限操作房间座位'
 
     switch (code) {
       case Chatroom.MsgType.SeatOn:

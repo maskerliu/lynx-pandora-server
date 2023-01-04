@@ -60,7 +60,7 @@ export namespace RemoteAPI {
     RoomSave: '/save',
     RoomDelete: '/delete',
     SeatRequests: '/seatRequests',
-    SeatReq: '/seatReq', 
+    SeatReq: '/seatReq',
     SeatMgr: '/seatMgr', // 抱上麦
     Collect: '/collect', // （取消）收藏频道
     Emojis: '/emojis',
@@ -69,5 +69,25 @@ export namespace RemoteAPI {
     Leave: '/leave',
     Reward: '/reward',
     SendMsg: '/sendMsg',
+  }
+
+  export const Timeline = {
+    BasePath: '/timeline',
+    MyPosts: '/post/my',
+    PostPub: '/post/pub',
+    PostDel: '/post/del',
+    MyMoments: '/moment/my',
+    MomentPub: '/moment/pub',
+    MomentDel: '/moment/del',
+    MomentLike: '/moment/like',
+    Comments: '/comments', // 评论
+    CommentPub: '/comment/pub', // 发表评论
+    CommentDel: '/comment/del', // 删除评论
+  }
+
+  export const Square = {
+    BasePath: '/square',
+    Recommend: '/recommend',
+    MyCollections: '/myCollections',
   }
 }

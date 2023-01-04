@@ -2,13 +2,13 @@ import compression from 'compression'
 import cors, { CorsOptions } from 'cors'
 import express, { Application, Response } from 'express'
 import fileUpload from 'express-fileupload'
+import expressStaticGzip from 'express-static-gzip'
 import fs from 'fs'
-import os from 'os'
 import { Autowired, Component } from 'lynx-express-mvc'
 import path from 'path'
+import { getLocalIP } from './common/common.utils'
 import { APP_BASE_DIR, DB_DIR, STATIC_DIR } from './common/env.const'
 import BizRouter from './router'
-import expressStaticGzip from 'express-static-gzip'
 
 @Component()
 export default class BizServer {
@@ -114,37 +114,6 @@ function initAppEnv() {
       fs.open(STATIC_DIR, (err) => { if (err) fs.mkdirSync(STATIC_DIR) })
     }
   })
-}
-
-function getLocalIP() {
-  const netInfo = os.networkInterfaces()
-  let ip = ''
-
-  switch (os.type()) {
-    case 'Windows_NT':
-      for (let netName in netInfo) {
-        if (netName === '本地连接' || netName === '以太网') {
-          for (let j = 0; j < netInfo[netName].length; j++) {
-            if (netInfo[netName][j].family === 'IPv4') {
-              ip = netInfo[netName][j].address
-              break;
-            }
-          }
-        }
-      }
-      break
-    case 'Darwin':
-      for (let i = 0; i < netInfo.en0.length; ++i) {
-        if (netInfo.en0[i].family == 'IPv4') {
-          ip = netInfo.en0[i].address
-        }
-      }
-      break
-    case 'Linux':
-      ip = netInfo.eth0[0].address
-      break
-  }
-  return ip
 }
 
 initAppEnv()

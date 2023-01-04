@@ -2,6 +2,7 @@ import { UploadedFile } from 'express-fileupload'
 import { Autowired, Service } from 'lynx-express-mvc'
 import md5 from 'md5'
 import path from 'path'
+import { getLocalIP } from '../common/common.utils'
 import { STATIC_DIR } from '../common/env.const'
 import { User } from '../models/user.model'
 import { AccountRepo, UserInfoRepo } from '../repository/user.repo'
@@ -65,7 +66,7 @@ export default class UserService {
       return token
     }
   }
-  
+
   async register(phone: string, pwd: string) {
     let token = null
     let account = await this.accountRepo.get('phone', phone)
@@ -89,7 +90,7 @@ export default class UserService {
     let profile = await this.getUserInfoByToken(token)
     let ext = avatar.name.split('.').pop()
     await avatar.mv(path.join(STATIC_DIR, avatar.md5 + '.' + ext))
-    profile.avatar = `//192.168.25.16:8884/_res/${avatar.md5}.${ext}`
+    profile.avatar = `/_res/${avatar.md5}.${ext}`
 
     delete profile.encryptPWD
     delete profile.token
@@ -114,12 +115,11 @@ export default class UserService {
     let profiles = await this.userInfoRepo.search('name', name)
     let docs = profiles.map(item => { return { id: item.uid } })
     let dbResp = await this.userInfoRepo.pouchdb.bulkGet({ docs })
-    console.log(dbResp.results)
     return profiles
   }
 
   async bulkUsers(uids: Array<string>) {
-    return this.userInfoRepo.bulkUsers(uids)
+    return await this.userInfoRepo.bulkUsers(uids)
   }
 
   async getUserInfoByToken(token: string) {
@@ -136,6 +136,7 @@ export default class UserService {
     if (account == null) throw '未找到该用户'
     let profile = await this.userInfoRepo.get('uid', account._id)
     if (profile == null) profile = { uid: account._id }
+    
     let finalProfile = Object.assign(account, profile)
     delete finalProfile._rev
     delete finalProfile.encryptPWD
