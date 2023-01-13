@@ -17,7 +17,7 @@
         "compression": "^1.7.4",
         "express-static-gzip": "^2.1.7",
         "cors": "^2.8.5",
-        "lynx-express-mvc": "1.0.31",
+        "lynx-express-mvc": "1.0.32",
         "md5": "^2.3.0",
         "mqtt": "^4.3.7",
         "sockjs": "^0.3.24",

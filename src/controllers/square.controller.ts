@@ -1,7 +1,7 @@
 import { UploadedFile } from 'express-fileupload'
 import { Autowired, BizContext, BodyParam, Controller, FileParam, Get, Post, QueryParam } from 'lynx-express-mvc'
 import { RemoteAPI, Square, Timeline } from '../models'
-import { ChatroomService } from '../service/chatroom.service'
+import { ChatroomService } from '../service/chatroom/chatroom.service'
 import { CommentService, MomentService, PostService } from '../service/square.service'
 import UserService from '../service/user.service'
 
@@ -23,16 +23,24 @@ export class SquareController {
 
 
   @Get(RemoteAPI.Square.Recommend)
-  async recommend(context: BizContext) {
+  async recommend(@QueryParam('page') page: number, context: BizContext) {
     let uid = await this.userService.token2uid(context.token)
-    let rooms = await this.chatroomService.getRecommend(uid)
-
-    let recommends = rooms.map(it => {
+    let rooms = await this.chatroomService.recommends(uid, page)
+    let roomFeeds = rooms.map(it => {
       return {
-        type: Square.SquareItemType.Room,
+        type: Square.FeedType.Room,
         data: it
-      } as Square.SquareItem
+      } as Square.Feed
     })
+    let moments = await this.momentService.recommends(uid, page)
+    let momentsFeeds = moments.map(it => {
+      return {
+        type: Square.FeedType.Moment,
+        data: it
+      } as Square.Feed
+    })
+
+    let recommends = this.sufflue(roomFeeds, momentsFeeds)
 
     return recommends
   }
@@ -44,14 +52,39 @@ export class SquareController {
 
     let collections = rooms.map(it => {
       return {
-        type: Square.SquareItemType.Room,
+        type: Square.FeedType.Room,
         data: it
-      } as Square.SquareItem
+      } as Square.Feed
     })
 
     return collections
   }
 
+  private sufflue<T>(arr1: Array<T>, arr2: Array<T>) {
+    let length = arr1.length + arr2.length
+    let result = new Array<T>(length)
+
+    for (let i = 0; i < length; ++i) {
+      let seed = Math.round(Math.random() * 2)
+      if (seed == 0) {
+
+      } else if (seed == 1) {
+
+      } else if (seed = 2) {
+
+      }
+      if (arr1.length == 0) seed = 1
+      if (arr2.length == 0) seed = 0
+
+
+      let idxR = Math.floor(Math.random() * arr1.length)
+      let idxM = Math.floor(Math.random() * arr2.length)
+
+      result[i] = seed == 0 ? arr1.splice(idxR, 1)[0] : arr2.splice(idxM, 1)[0]
+    }
+
+    return result
+  }
 }
 
 @Controller(RemoteAPI.Timeline.BasePath)
@@ -70,14 +103,14 @@ export class TimelineController {
   chatroomService: ChatroomService
 
 
-  @Get(RemoteAPI.Timeline.MyPosts)
-  async getMyPosts(@QueryParam('page') page: number, context: BizContext) {
-    return await this.postService.getMyPosts(context.token, page)
+  @Get(RemoteAPI.Timeline.Posts)
+  async getMyPosts(@QueryParam('page') page: number, @QueryParam('uid') uid: string) {
+    return await this.postService.getPosts(uid, page)
   }
 
-  @Get(RemoteAPI.Timeline.MyMoments)
-  async myMoments(@QueryParam('page') page: number, context: BizContext) {
-    return await this.momentService.getMyMoments(context.token, page)
+  @Get(RemoteAPI.Timeline.Moments)
+  async myMoments(@QueryParam('page') page: number, @QueryParam('uid') uid: string) {
+    return await this.momentService.getMoments(uid, page)
   }
 
   @Post(RemoteAPI.Timeline.MomentPub)

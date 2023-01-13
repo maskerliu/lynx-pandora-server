@@ -35,7 +35,8 @@ export default class UserService {
 
   async token2uid(token: string) {
     let account = await this.accountRepo.get('token', token)
-    return account._id
+    if (account) return account._id
+    else throw '登录信息失效，请重新登录'
   }
 
   async updateUserStatus(topic: string, message: any) {
@@ -57,12 +58,14 @@ export default class UserService {
     if (account != null) {
       let token = this.genToken(account._id)
       account.token = token
-      this.accountRepo.update(account)
+      await this.accountRepo.updateAccount(account)
       return token
     } else {
-      let _id = await this.accountRepo.update({ phone })
-      let token = this.genToken(_id)
-      await this.accountRepo.update({ _id, phone, token })
+      let uid = await this.accountRepo.createAccount({ phone })
+      let token = this.genToken(uid)
+      let account = await this.accountRepo.get('phone', phone)
+      account.token = token
+      await this.accountRepo.updateAccount(account)
       return token
     }
   }
@@ -136,11 +139,13 @@ export default class UserService {
     if (account == null) throw '未找到该用户'
     let profile = await this.userInfoRepo.get('uid', account._id)
     if (profile == null) profile = { uid: account._id }
-    
+
     let finalProfile = Object.assign(account, profile)
+    delete finalProfile._id
     delete finalProfile._rev
     delete finalProfile.encryptPWD
     delete finalProfile.token
+    delete finalProfile.phone
     return finalProfile
   }
 
@@ -170,7 +175,6 @@ export default class UserService {
       }
     }
     result = await this.userInfoRepo.pouchdb.find(opt)
-    console.log(result.docs)
     // await this.userInfoRepo.pouchdb.bulkDocs(profiles)
   }
 }

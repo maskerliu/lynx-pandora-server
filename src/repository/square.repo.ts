@@ -1,7 +1,7 @@
 import { Repository } from 'lynx-express-mvc'
 import { DB_DIR } from '../common/env.const'
+import { Timeline } from '../models'
 import BaseRepo from './base.repo'
-import { Common, Timeline } from '../models'
 
 
 @Repository(DB_DIR, 'post.db')
@@ -15,7 +15,25 @@ export class PostRepo extends BaseRepo<any> {
     }
   }
 
-  async getPagedPosts(uid: string, page: number, pageSize: number) {
+  async getPagedLastPosts(uid: string, page: number, pageSize: number) {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        uid: { $ne: uid },
+        timestamp: { $lt: new Date().getTime() }
+      },
+      limit: pageSize,
+      sort: [{ uid: 'asc' }, { 'timestamp': 'desc' }],
+      skip: page * pageSize,
+      use_index: 'idx-uid'
+    }
+    let resp = await this.pouchdb.find(req)
+    return resp.docs.map(it => {
+      delete it._rev
+      return it as Timeline.Moment
+    })
+  }
+
+  async getPagedUserPosts(uid: string, page: number, pageSize: number) {
     let req: PouchDB.Find.FindRequest<any> = {
       selector: {
         uid: uid,
@@ -47,10 +65,10 @@ export class MomentRepo extends BaseRepo<Timeline.Moment> {
     }
   }
 
-  async getPagedMoments(uid: string, page: number, pageSize: number) {
+  async getPagedLastMoments(uid: string, page: number, pageSize: number) {
     let req: PouchDB.Find.FindRequest<any> = {
       selector: {
-        uid: uid,
+        uid: { $nin: [uid] },
         timestamp: { $lt: new Date().getTime() }
       },
       limit: pageSize,
@@ -62,7 +80,26 @@ export class MomentRepo extends BaseRepo<Timeline.Moment> {
 
     return resp.docs.map(it => {
       delete it._rev
-      return it as Timeline.Post
+      return it as Timeline.Moment
+    })
+  }
+
+  async getPagedUserMoments(uid: string, page: number, pageSize: number) {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        uid,
+        timestamp: { $lt: new Date().getTime() }
+      },
+      limit: pageSize,
+      skip: page * pageSize,
+      sort: [{ 'uid': 'desc' }, { 'timestamp': 'desc' }],
+      use_index: 'idx-uid'
+    }
+    let resp = await this.pouchdb.find(req)
+
+    return resp.docs.map(it => {
+      delete it._rev
+      return it as Timeline.Moment
     })
   }
 
@@ -90,7 +127,7 @@ export class CommentRepo extends BaseRepo<Timeline.Comment> {
 
   async init() {
     try {
-      await this.pouchdb.createIndex({ index: { fields: ['type', 'uid', 'timestamp'], ddoc: 'idx-uid' } })
+      await this.pouchdb.createIndex({ index: { fields: ['type', 'postId', 'timestamp'], ddoc: 'idx-pid' } })
     } catch (err) {
       console.error('initDB', err)
     }
@@ -104,8 +141,8 @@ export class CommentRepo extends BaseRepo<Timeline.Comment> {
         timestamp: { $lt: new Date().getTime() }
       },
       limit: 5,
-      sort: [{ 'timestamp': 'desc' }],
-      use_index: 'idx-uid'
+      sort: [{ 'type': 'asc' }, { 'postId': 'asc' }, { 'timestamp': 'desc' }],
+      use_index: 'idx-pid'
     }
   }
 
@@ -116,9 +153,9 @@ export class CommentRepo extends BaseRepo<Timeline.Comment> {
         type, postId,
         timestamp: { $lt: new Date().getTime() }
       },
-      sort: [{ 'timestamp': 'desc' }],
+      sort: [{ 'type': 'asc' }, { 'postId': 'asc' }, { 'timestamp': 'desc' }],
       skip: page * pageSize,
-      use_index: 'idx-uid'
+      use_index: 'idx-pid'
     }
 
     let resp = await this.pouchdb.find(req)

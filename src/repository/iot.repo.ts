@@ -3,7 +3,7 @@ import { DB_DIR } from '../common/env.const'
 import { IOT } from '../models/iot.model'
 import BaseRepo from './base.repo'
 
-@Repository(DB_DIR, 'device.db')
+@Repository(DB_DIR, 'iot-device.db')
 export class DeviceRepo extends BaseRepo<IOT.Device> {
 
   async init() {
@@ -31,7 +31,7 @@ export class DeviceRepo extends BaseRepo<IOT.Device> {
   }
 }
 
-@Repository(DB_DIR, 'device-data.db')
+@Repository(DB_DIR, 'iot-monitor-data.db')
 export class DeviceDataRepo extends BaseRepo<any> {
 
 async init() {

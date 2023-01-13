@@ -25,7 +25,6 @@ export default class DeviceMgrService {
     switch (msg.type) {
       case IOT.MsgType.DATA:
         // handle monitor data
-        console.log(msg)
         break
       case IOT.MsgType.REGISTER:
         let device = await this.deviceRepo.get('deviceId', msg.from)

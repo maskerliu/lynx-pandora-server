@@ -1,0 +1,98 @@
+[
+  {
+    "title": "白羊座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/39c6a169979c4d1280f56a434f31188c.png",
+    "effect": "/_res/57661c939a9047c3a85a825982bf502c.png",
+    "price": 22000
+  },
+  {
+    "title": "金牛座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/19e37e8e83004ca9a79aebdeee76023c.png",
+    "effect": "/_res/81692e1a69ed4fa6a2a383a1bfbc8f18.png",
+    "price": 22000
+  },
+  {
+    "title": "双子座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/192bd13e922c429485c5425ddcbc5363.png",
+    "effect": "/_res/0ff78be9d7b04ea88e39b945a14e6cd7.png",
+    "price": 21999
+  },
+  {
+    "title": "巨蟹座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/4d79a14d6f8c45a7b91e651d9c587269.png",
+    "effect": "/_res/ad10b934ef624e828effffaca9ff0988.png",
+    "price": 22000
+  },
+  {
+    "title": "狮子座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/upload/af695564f2114534ab8cb9b8eebc6655.png",
+    "effect": "/_res/7a6ee6b9312b4e6a8a14bb5391905daa.png",
+    "price": 21999
+  },
+  {
+    "title": "处女座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/upload/af695564f2114534ab8cb9b8eebc6655.png",
+    "effect": "/_res/7a6ee6b9312b4e6a8a14bb5391905daa.png",
+    "price": 22000
+  },
+  {
+    "title": "天秤座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/52cd2152-8a73-4b4a-9bfe-814cb363e0d1.png",
+    "effect": "/_res/033055c5-4d9e-472c-9750-d8b2f0b36eac.png",
+    "price": 22000
+  },
+  {
+    "title": "天蝎座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/d4efb6b388ac492881e8610c01959969.png",
+    "effect": "/_res/941ee8d39ab84c588d97e0c04dd1af1d.png",
+    "price": 21999
+  },
+  {
+    "title": "射手座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/dbbdff9062f3428fb2c6c378991c466d.png",
+    "effect": "/_res/81f2f5797e9346a89a641cb3e9219162.png",
+    "price": 22000
+  },
+  {
+    "title": "摩羯座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/d0a436feaee74638983cadff49d59e0d.png",
+    "effect": "/_res/eaac59418bf6472692262440c6f6f691.png",
+    "price": 22000
+  },
+  {
+    "title": "水瓶座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/4b6086be2bc9407195f9918d84a44221.png",
+    "effect": "/_res/02f4fee4820a447d9b41018657b72164.png",
+    "price": 22000
+  },
+  {
+    "title": "双鱼座",
+    "type": 1,
+    "status": 0,
+    "snap": "/_res/cadd894c42964d4e925786c7c3b81caf.png",
+    "effect": "/_res/df3cbbdc6e8a4113b5f793cab492ac2c.png",
+    "price": 22000
+  }
+]

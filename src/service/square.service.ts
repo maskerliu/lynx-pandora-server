@@ -1,9 +1,11 @@
+import { profile } from 'console'
 import { UploadedFile } from 'express-fileupload'
 import { Autowired, Service } from 'lynx-express-mvc'
 import path from 'path'
+import { stringify } from 'querystring'
 import { STATIC_DIR } from '../common/env.const'
 import { Timeline } from '../models'
-import { CommentRepo, MomentRepo, PostRepo } from '../repository/timeline.repo'
+import { CommentRepo, MomentRepo, PostRepo } from '../repository/square.repo'
 import UserService from './user.service'
 
 
@@ -18,6 +20,17 @@ export class CommentService {
 
   async snapComments(type: number, postIds: string) {
     return await this.commentRepo.pagedComments(type, postIds, 0, 5)
+  }
+
+  async bulkComments(type: number, postIds: Array<string>) {
+    let comments = new Map<string, Array<Timeline.Comment>>()
+
+    for (let postId of postIds) {
+      let result = await this.commentRepo.pagedComments(type, postId, 0, 5)
+      comments.set(postId, result)
+    }
+
+    return comments
   }
 
   async getComments(type: number, postId: string, page: number) {
@@ -50,16 +63,19 @@ export class PostService {
   @Autowired()
   postRepo: PostRepo
 
-  async getMyPosts(token: string, page: number) {
-    let uid = await this.userService.token2uid(token)
-    return await this.postRepo.getPagedPosts(uid, page, 15)
+  async recomends(uid: string, page: number) {
+    return await this.postRepo.getPagedLastPosts(uid, page, 5)
+  }
+
+  async getPosts(uid: string, page: number) {
+    return await this.postRepo.getPagedUserPosts(uid, page, 15)
   }
 
 }
 
 @Service()
 export class MomentService {
-  
+
   @Autowired()
   userService: UserService
 
@@ -69,20 +85,37 @@ export class MomentService {
   @Autowired()
   momentRepo: MomentRepo
 
-  async recommends(uid: string) {
-    return []
+  async recommends(uid: string, page: number) {
+    let result = await this.momentRepo.getPagedLastMoments(uid, page, 5)
+    let mIds = result.map(it => { return it._id })
+    let snapComments = await this.commentService.bulkComments(Timeline.CommentType.Moment, mIds)
+    let uids = result.map(it => { return it.uid })
+
+    let profiles = await this.userService.bulkUsers(uids)
+
+    result.forEach(moment => {
+      let profile = profiles.find(it => { return it.uid == moment.uid })
+      moment.name = profile.name
+      moment.avatar = profile.avatar
+      moment.comments = snapComments.get(moment._id)
+      if (moment.likes == null) moment.likes = []
+    })
+    return result
   }
 
-  async getMyMoments(token: string, page: number) {
-    let uid = await this.userService.token2uid(token)
-    let resp = await this.momentRepo.getPagedMoments(uid, page, 15)
+  async getMoments(uid: string, page: number) {
+    let profile = await this.userService.getUserInfo(uid)
+    let result = await this.momentRepo.getPagedUserMoments(uid, page, 15)
+    let mIds = result.map(it => { return it._id })
+    let snapComments = await this.commentService.bulkComments(Timeline.CommentType.Moment, mIds)
+    result.forEach(it => {
+      it.name = profile.name
+      it.avatar = profile.avatar
+      it.comments = snapComments.get(it._id)
+      if (it.likes == null) it.likes = []
+    })
 
-    for (let post of resp) {
-      let snapComments = await this.commentService.snapComments(Timeline.CommentType.Moment, post._id)
-      post.comments = snapComments
-    }
-
-    return resp
+    return result
   }
 
   async pubMoment(moment: Timeline.Moment, images: Array<UploadedFile>) {
@@ -94,6 +127,7 @@ export class MomentService {
         moment.images.push(`/_res/${file.md5}.${ext}`)
       }
     }
+    moment.timestamp = new Date().getTime()
     return await this.momentRepo.saveMoment(moment)
   }
 
@@ -121,7 +155,7 @@ export class MomentService {
       } else {
         moment.likes.push({ uid: profile.uid, name: profile.name })
       }
-      
+
       return await this.momentRepo.updateMoment(moment)
     } else {
       throw 'moment doest existed'

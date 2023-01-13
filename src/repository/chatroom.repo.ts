@@ -207,14 +207,218 @@ export class SeatReqRepo extends BaseRepo<Chatroom.SeatReq> {
   }
 }
 
+// Emoji
+@Repository(DB_DIR, 'chatroom-emoji.db')
+export class EmojiRepo extends BaseRepo<Chatroom.Emoji> {
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['type', 'status'], ddoc: 'idx-emoji' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
+
+  async importData(emojis: Array<Chatroom.Emoji>) {
+    await this.pouchdb.bulkDocs(emojis)
+  }
+
+  async getEmojis() {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: { status: Chatroom.EmojiStatus.On }
+    }
+
+    let resp = await this.pouchdb.find(req)
+    return resp.docs.map(it => {
+      delete it._rev
+      return it as Chatroom.Emoji
+    })
+  }
+}
+
+// 礼物
 @Repository(DB_DIR, 'chatroom-gift.db')
 export class GiftRepo extends BaseRepo<Chatroom.Gift> {
 
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['type', 'status', 'price'], ddoc: 'idx-type' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
+
+  async importData(gifts: Array<Chatroom.Gift>) {
+    await this.pouchdb.bulkDocs(gifts)
+  }
+
+  async getGifts(roomId: string, type: Chatroom.GiftType) {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        type,
+        status: Chatroom.GiftStatus.On,
+        price: { $gt: -1 }
+      },
+      sort: [{ 'type': 'asc' }, { 'status': 'asc' }, { 'price': 'asc' }],
+      use_index: 'idx-type'
+    }
+
+    let resp = await this.pouchdb.find(req)
+    return resp.docs.map(it => {
+      delete it._rev
+      return it as Chatroom.Gift
+    })
+  }
+}
+
+// 道具
+@Repository(DB_DIR, 'chatroom-prop.db')
+export class PropRepo extends BaseRepo<Chatroom.Prop>{
   async init() {
     try {
       await this.pouchdb.createIndex({ index: { fields: ['uid'], ddoc: 'idx-uid' } })
     } catch (err) {
       console.error('initDB', err)
     }
+  }
+
+  async importData(props: Array<Chatroom.Prop>) {
+    await this.pouchdb.bulkDocs(props)
+  }
+
+  async bulkProps(docs: Array<{ id: string }>) {
+    let resp = await this.pouchdb.bulkGet({ docs })
+
+    let props = resp.results.map(it => {
+      let prop = it.docs[0]['ok'] as Chatroom.Prop
+      delete prop._rev
+      return prop
+    })
+
+    return props
+  }
+
+  async getProps(type: Chatroom.PropType) {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        type
+      },
+    }
+    let resp = await this.pouchdb.find(req)
+
+    return resp.docs.map(it => {
+      delete it._rev
+      return it as Chatroom.Prop
+    })
+  }
+}
+
+// 道具购买记录
+@Repository(DB_DIR, 'chatroom-prop-order.db')
+export class PropOrderRepo extends BaseRepo<Chatroom.PropOrder>{
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['uid', 'timestamp'], ddoc: 'idx-uid' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
+
+  async orderExisted(propId: string, uid: string) {
+
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        uid, propId,
+        expired: { $gte: new Date().getTime() }
+      },
+      limit: 1,
+    }
+    let resp = await this.pouchdb.find(req)
+    return resp.docs.length > 0
+  }
+
+  async getUserVaildPropOrder(uid: string) {
+    let time = new Date().getTime()
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        uid,
+        timestamp: { $lt: time },
+        expired: { $gte: time }
+      },
+      sort: [{ uid: 'asc' }, { timestamp: 'asc' }],
+      use_index: 'idx-uid'
+    }
+
+    let resp = await this.pouchdb.find(req)
+    return resp.docs.map(it => { return it as Chatroom.PropOrder })
+  }
+
+  async getUserUsingProps(uid: string) {
+    let time = new Date().getTime()
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {
+        uid,
+        timestamp: { $lt: time },
+        expired: { $gte: time },
+        status: Chatroom.PropOrderStatus.On,
+      },
+      sort: [{ uid: 'asc' }, { timestamp: 'asc' }],
+      use_index: 'idx-uid'
+    }
+
+    let resp = await this.pouchdb.find(req)
+    return resp.docs.map(it => { return it as Chatroom.PropOrder })
+  }
+
+  async addOrder(order: Chatroom.PropOrder) {
+    delete order._id
+    delete order._rev
+    let resp = await this.pouchdb.post(order)
+    if (resp.ok) return resp.id
+    else throw 'fail to add prop order'
+  }
+
+  async saveOrder(order: Chatroom.PropOrder) {
+    let resp = await this.pouchdb.put(order)
+    if (resp.ok) return resp.id
+    else throw 'fail to update prop order'
+  }
+}
+
+// 礼物购买记录
+@Repository(DB_DIR, 'chatroom-gift-order.db')
+export class GiftOrderRepo extends BaseRepo<Chatroom.GiftOrder>{
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['uid', 'timestamp'], ddoc: 'idx-uid' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
+
+  async addOrder(order: Chatroom.GiftOrder) {
+    let resp = await this.pouchdb.post(order)
+    if (resp.ok) return resp.id
+    else throw 'fail to add gift order'
+  }
+
+  async updateOrder(order: Chatroom.GiftOrder) {
+    let resp = await this.pouchdb.put(order)
+    if (resp.ok) return resp.id
+    else throw 'fail to add gift order'
+  }
+}
+
+@Repository(DB_DIR, 'chatroom-reward-record.db')
+export class RewardRecordRepo extends BaseRepo<Chatroom.RewardRecord>{
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['uid', 'timestamp'], ddoc: 'idx-uid' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
+
+  async addRecords(records: Array<Chatroom.RewardRecord>) {
+    await this.pouchdb.bulkDocs(records)
   }
 }

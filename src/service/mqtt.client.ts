@@ -38,7 +38,7 @@ export default class MQClient {
       this.client.subscribe('_client/lwt/+') // 监听Client在线状态
     })
 
-    this.client.on('error', (error) => { console.log(error) })
+    this.client.on('error', (error) => { console.error(error) })
 
     this.client.on('message', async (topic, message) => {
       if (topic.indexOf('_im/') != -1) {

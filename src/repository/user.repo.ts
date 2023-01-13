@@ -14,6 +14,17 @@ export class AccountRepo extends BaseRepo<User.Account> {
     }
   }
 
+  async createAccount(account: User.Account) {
+    let resp = await this.pouchdb.post(account)
+    if (resp.ok) return resp.id
+    else throw 'fail to create account'
+  }
+
+  async updateAccount(account: User.Account) {
+    let resp = await this.pouchdb.put(account)
+    if (resp.ok) return resp.id
+    else throw 'fail to update account'
+  }
 }
 
 @Repository(DB_DIR, 'user-info.db')
