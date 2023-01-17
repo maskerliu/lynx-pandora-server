@@ -6,8 +6,8 @@ import { Chatroom } from '../../models'
 import { ChatroomRepo, RoomCollectionRepo, SeatInfoRepo, SeatReqRepo } from '../../repository/chatroom.repo'
 import MQClient from '../mqtt.client'
 import UserService from '../user.service'
-import CustomEmojis from './emoji.basic.json'
-import ToolEmojis from './emoji.tools.json'
+import CustomEmojis from './data/emoji.basic.json'
+import ToolEmojis from './data/emoji.tools.json'
 import { GiftService } from './gift.service'
 import { PropService } from './prop.service'
 
@@ -47,7 +47,8 @@ export class ChatroomService {
   }
 
   async save(room: Chatroom.Room, cover: UploadedFile, token: string) {
-    let profile = await this.userService.getUserInfoByToken(token)
+    let uid = await this.userService.token2uid(token)
+    let profile = await this.userService.getUserInfo(uid)
 
     if (cover != null) {
       let ext = cover.name.split('.').pop()
@@ -96,7 +97,8 @@ export class ChatroomService {
   }
 
   async getMyRooms(token: string) {
-    let profile = await this.userService.getUserInfoByToken(token)
+    let uid = await this.userService.token2uid(token)
+    let profile = await this.userService.getUserInfo(uid)
     let rooms = await this.chatroomRepo.getRooms(profile.uid)
     rooms.forEach(it => {
       it.ownerName = profile.name
@@ -138,8 +140,8 @@ export class ChatroomService {
   }
 
   async leave(roomId: string, token: string) {
-
-    let profile = await this.userService.getUserInfoByToken(token)
+    let uid = await this.userService.token2uid(token)
+    let profile = await this.userService.getUserInfo(uid)
     let seats = await this.seatInfoRepo.getRoomSeats(roomId)
 
     let onSeat = seats.find(it => { return it.userInfo?.uid == profile.uid })
@@ -167,7 +169,8 @@ export class ChatroomService {
   }
 
   async reward(roomId: string, giftId: string, count: number, receivers: string[], token: string) {
-    let from = await this.userService.getUserInfoByToken(token)
+    let uid = await this.userService.token2uid(token)
+    let from = await this.userService.getUserInfo(uid)
     let gift = await this.giftService.buyGift(from.uid, giftId, count, receivers)
 
     let rewardMsgs = receivers.map(it => {

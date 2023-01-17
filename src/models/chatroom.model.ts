@@ -61,30 +61,12 @@ export namespace Chatroom {
 
   export interface Seat extends Common.DBDoc {
     roomId?: string
+    defName?: string
     seq: number // 麦序
     type: SeatType
     isMute: boolean // 是否闭麦
     isLocked: boolean
     userInfo?: User.Profile & UserPropInfo
-  }
-
-  export enum GiftType {
-    Normal,
-    VIP,
-  }
-
-  export enum GiftStatus {
-    On,
-    Off
-  }
-
-  export interface Gift extends Common.DBDoc {
-    title: string
-    snap: string
-    effect?: string
-    price: number
-    type: GiftType
-    status?: GiftStatus
   }
 
   export interface RoomCollection extends Common.DBDoc {
@@ -119,6 +101,25 @@ export namespace Chatroom {
     count?: number
   }
 
+  export enum GiftType {
+    Normal,
+    VIP,
+  }
+
+  export enum GiftStatus {
+    On,
+    Off
+  }
+
+  export interface Gift extends Common.DBDoc {
+    title: string
+    snap: string
+    effect?: string
+    price: number
+    type: GiftType
+    status?: GiftStatus
+  }
+
   export interface EmojiGroup {
     name: string
     emojis: Array<Emoji>
@@ -149,12 +150,18 @@ export namespace Chatroom {
     MsgFrame
   }
 
+  export enum PropStatus {
+    On,
+    Off
+  }
+
   export interface Prop extends Common.DBDoc {
     type: PropType
     name: string
     snap: string
     effect: string
     price: number
+    status: PropStatus
     expired: number
   }
 

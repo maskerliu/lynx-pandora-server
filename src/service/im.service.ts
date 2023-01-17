@@ -53,23 +53,33 @@ export default class IMService {
     return await this.sessionRepo.bulkGet(sids)
   }
 
-  async saveSession(session: IM.Session, thumb: UploadedFile) {
+  async saveSession(session: IM.Session, thumb?: UploadedFile) {
     if (thumb != null) {
       let ext = thumb.name.split('.').pop()
       await thumb.mv(path.join(STATIC_DIR, thumb.md5 + '.' + ext))
       session.thumb = `/_res/${thumb.md5}.${ext}`
     }
 
-    await this.sessionRepo.update(session)
-    let result = await this.sessionRepo.get('sid', session.sid)
-    delete result._id
-    delete result._rev
-    return result
+    let dbItem = await this.sessionRepo.get('sid', session.sid)
+    if (dbItem) {
+      session._id = dbItem._id
+      await this.sessionRepo.save(session)
+    } else {
+      let id = await this.sessionRepo.add(session)
+      session._id = id
+    }
+    return session
   }
 
   async getOfflineMessages(token: string) {
     let uid = await this.userService.token2uid(token)
-    return await this.messageRepo.bulkGet(uid)
+    let msgs = await this.messageRepo.bulkGet(uid)
+    msgs.forEach(it => {
+      delete it._id
+      delete it._rev
+      delete it['to']
+    })
+    return msgs
   }
 
   /**
@@ -109,8 +119,11 @@ export default class IMService {
 
     if (session == null) { throw '当前会话已失效' }
 
-    session.members.forEach(async (it) => {
-      if (it == message.uid && message.type == IM.MessageType.TEXT) return
+    let offlineMsgs: Array<IM.Message> = []
+
+    for (let i = 0; i < session.members.length; ++i) {
+      let it = session.members[i]
+      if (it == message.uid && message.type == IM.MessageType.TEXT) continue
 
       let status = await this.userService.userOnlineStatus(it)
       if (status == User.UserOnlineStatus.Online) {
@@ -120,9 +133,11 @@ export default class IMService {
         // this.mqClient.sendMsg(`_im/${it}`, JSON.stringify([message]))
       } else {
         message.to = it
-        await this.messageRepo.put(message)
+        offlineMsgs.push(message)
       }
-    })
+    }
+    await this.messageRepo.bulkDocs(offlineMsgs)
+
     return 'success'
   }
 

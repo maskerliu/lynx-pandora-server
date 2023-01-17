@@ -17,6 +17,7 @@ type UsePropReq = {
   orderId: string,
   propId: string,
   status: Chatroom.PropOrderStatus
+  type: Chatroom.PropType
 }
 
 type RewardReq = {
@@ -73,8 +74,8 @@ export class ChatroomController {
   }
 
   @Get(RemoteAPI.Chatroom.Gifts)
-  async getGiftInfo(@QueryParam('roomId') roomId: string) {
-    return await this.giftService.getGifts(roomId)
+  async getGiftInfo(@QueryParam('roomId') roomId: string, @QueryParam('type') type: string) {
+    return await this.giftService.getGifts(roomId, Number.parseInt(type))
   }
 
   @Get(RemoteAPI.Chatroom.PropStore)
@@ -89,7 +90,7 @@ export class ChatroomController {
 
   @Post(RemoteAPI.Chatroom.UseProp)
   async useProp(@BodyParam() data: UsePropReq, context: BizContext) {
-    return await this.propService.updateOrderStatus(data.orderId, data.propId, data.status, context.token)
+    return await this.propService.updateOrderStatus(data.orderId, data.propId, data.status, data.type, context.token)
   }
 
   @Get(RemoteAPI.Chatroom.MyProps)

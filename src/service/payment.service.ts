@@ -49,7 +49,7 @@ export class PaymentService {
 
     if (wallet == null) {
       wallet = { diamonds: 0, purse: 0, uid }
-      await this.walletRepo.createWallet(wallet)
+      await this.walletRepo.add(wallet)
       wallet = await this.walletRepo.get('uid', uid)
     }
 
@@ -73,7 +73,7 @@ export class PaymentService {
 
     let newWallet = Object.assign({}, wallet)
     newWallet.diamonds += purchase.diamonds
-    await this.walletRepo.updateWallet(newWallet)
+    await this.walletRepo.save(newWallet)
 
     delete wallet._id
     delete wallet._rev
@@ -83,7 +83,7 @@ export class PaymentService {
       timestamp: new Date().getTime(),
       snap: wallet
     }
-    await this.payRepo.saveRecord(payRecord)
+    await this.payRepo.add(payRecord)
     delete newWallet._rev
     return newWallet
   }
@@ -94,7 +94,7 @@ export class PaymentService {
     if (wallet.diamonds - diamonds < 0) throw '钻石不足，请充值'
     let newWallet = Object.assign({}, wallet)
     newWallet.diamonds -= diamonds
-    await this.walletRepo.updateWallet(newWallet)
+    await this.walletRepo.save(newWallet)
 
     delete wallet._id
     delete wallet._rev
@@ -104,7 +104,7 @@ export class PaymentService {
       timestamp: new Date().getTime(),
       snap: wallet
     }
-    return await this.payRepo.saveRecord(payRecord)
+    return await this.payRepo.add(payRecord)
   }
 
 
@@ -124,7 +124,7 @@ export class PaymentService {
     let newWallet = Object.assign({}, wallet)
     newWallet.diamonds += purchase.diamonds
     newWallet.purse -= purchase.discount
-    await this.walletRepo.updateWallet(newWallet)
+    await this.walletRepo.save(newWallet)
     delete wallet._id
     delete wallet._rev
     let payRecord: Payment.PayRecord = {
@@ -133,20 +133,19 @@ export class PaymentService {
       diamonds: purchase.diamonds,
       snap: wallet
     }
-    await this.payRepo.saveRecord(payRecord)
+    await this.payRepo.add(payRecord)
 
     let pusreRecord: Payment.PurseRecord = {
       uid, timestamp,
       purse: -purchase.discount,
       snap: wallet
     }
-    await this.purseRepo.addRecords([pusreRecord])
+    await this.purseRepo.add(pusreRecord)
     delete newWallet._rev
     return newWallet
   }
 
   async bulkUpdatePurse(records: Array<{ uid: string, purse: number }>) {
-
     let uids = records.map(it => { return it.uid })
     let wallets = await this.walletRepo.bulkGet(uids)
 
@@ -163,16 +162,13 @@ export class PaymentService {
       purseRecords.push(record)
     })
 
-    await this.walletRepo.bulkUpdate(wallets)
-    let resp = await this.purseRepo.addRecords(purseRecords)
-    return resp.map(it => {
-      return it.id
-    })
+    await this.walletRepo.bulkDocs(wallets)
+    return await this.purseRepo.bulkDocs(purseRecords)
   }
 
   async getPagedOrders(page: number, token: string) {
     let uid = await this.userService.token2uid(token)
-    return await this.purseRepo.getPagedRecords(uid, page, 15)
+    return await this.purseRepo.pagedGet(uid, page, 15)
   }
 
 }

@@ -4,7 +4,6 @@ import { GiftOrderRepo, GiftRepo, RewardRecordRepo } from '../../repository/chat
 import { PaymentService } from '../payment.service'
 import BasicGifts from './data/gift.basic.json'
 import VIPGifts from './data/gift.vip.json'
-
 @Service()
 export class GiftService {
 
@@ -24,8 +23,14 @@ export class GiftService {
     // await this.importData()
   }
 
-  async getGifts(roomId: string) {
-    return await this.giftRepo.getGifts(roomId, Chatroom.GiftType.Normal)
+  async getGifts(roomId: string, type: Chatroom.GiftType) {
+    let result = await this.giftRepo.getGifts(roomId, type)
+    result.forEach(it => {
+      delete it._rev
+    })
+
+    
+    return result
   }
 
   async buyGift(uid: string, giftId: string, count: number, receivers: Array<string>) {
@@ -38,7 +43,7 @@ export class GiftService {
       timestamp: new Date().getTime()
     }
 
-    let orderId = await this.giftOrderRepo.addOrder(order)
+    let orderId = await this.giftOrderRepo.add(order)
     let purseRecords = receivers.map(it => { return { uid: it, purse: gift.price } })
     let purseIds = await this.paymentService.bulkUpdatePurse(purseRecords)
 
@@ -64,23 +69,15 @@ export class GiftService {
       purseRecords.push({ uid: it, purse: gift.price })
     })
 
-    await this.rewardRecordRepo.addRecords(rewardRecords)
-
+    await this.rewardRecordRepo.bulkDocs(rewardRecords)
 
     return gift
   }
 
 
   private async importData() {
-    await this.giftRepo.importData(BasicGifts)
-  }
-
-  async getBasicGifts() {
-    return BasicGifts as Array<Chatroom.Gift>
-  }
-
-  async getVIPGifs() {
-    return VIPGifts as Array<Chatroom.Gift>
+    let gifts = [...BasicGifts, ...VIPGifts]
+    await this.giftRepo.importData(gifts)
   }
 
 }

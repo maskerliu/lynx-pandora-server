@@ -20,7 +20,7 @@ export default class IOTMgrController {
 
   @Get(RemoteAPI.IOT.DeviceInfo)
   async getDevice(@QueryParam('deviceId') deviceId: string) {
-    return await this.deviceService.getDeviceInfo(deviceId)
+    return await this.deviceService.deviceInfo(deviceId)
   }
 
   @Post(RemoteAPI.IOT.DeviceSave)

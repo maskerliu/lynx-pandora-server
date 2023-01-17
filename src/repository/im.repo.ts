@@ -24,23 +24,6 @@ export class SessionRepo extends BaseRepo<IM.Session> {
     }
     return await this.find(request)
   }
-
-  public async update(item: IM.Session) {
-    let result = null
-    let getResult = await this.get('sid', item.sid, ['_id', '_rev'])
-    if (getResult != null) {
-      item._rev = getResult._rev
-      item._id = getResult._id
-      result = await this.pouchdb.put(item)
-    } else {
-      result = await this.pouchdb.post(item)
-    }
-
-    if (result.ok)
-      return result.id
-    else
-      throw '更新失败'
-  }
 }
 
 @Repository(DB_DIR, 'im-offline-messages.db')
@@ -54,29 +37,20 @@ export class OfflineMessageRepo extends BaseRepo<IM.Message> {
     }
   }
 
-  async put(message: IM.Message) {
-    await this.pouchdb.post(message)
-  }
-
   async bulkGet(uid: string) {
     let opt: PouchDB.Find.FindRequest<any> = {
       selector: {
         to: uid
       },
     }
-    let resp = await this.pouchdb.find(opt)
+    let resp = await this.find(opt)
 
-    let docs = resp.docs.map(it => {
+    let docs = resp.map(it => {
       return { _id: it._id, _rev: it._rev, _deleted: true }
     })
 
     await this.pouchdb.bulkDocs(docs)
 
-    return resp.docs.map(it => {
-      delete it._id
-      delete it._rev
-      delete it['to']
-      return it as IM.Message
-    })
+    return resp
   }
 }

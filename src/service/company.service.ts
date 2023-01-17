@@ -15,16 +15,16 @@ const All_Privileges: Array<IOT.Privilege> = [
 export default class CompanyService {
 
   @Autowired()
-  companyRepo: CompanyRepo
+  private userService: UserService
 
   @Autowired()
-  roleRepo: RoleRepo
+  private companyRepo: CompanyRepo
 
   @Autowired()
-  operatorRepo: OperatorRepo
+  private roleRepo: RoleRepo
 
   @Autowired()
-  userService: UserService
+  private operatorRepo: OperatorRepo
 
   async searchCompany(keyword: string) {
     let companies = await this.companyRepo.search('name', keyword)
@@ -52,10 +52,13 @@ export default class CompanyService {
     delete company.ownerName
     delete company.roles
 
-    let cid = await this.companyRepo.update(company)
+    let cid: string
     if (company._id == null) {
+      cid = await this.companyRepo.add(company)
+
       company.status = IOT.CompanyStatus.Verifing
-      let profile = await this.userService.getUserInfoByToken(token)
+      let uid = await this.userService.token2uid(token)
+      let profile = await this.userService.getUserInfo(uid)
       let operator: IOT.Operator = {
         uid: profile.uid,
         name: profile.name,
@@ -63,7 +66,10 @@ export default class CompanyService {
         roles: []
       }
       await this.saveOperator(operator)
+    } else {
+      cid = await this.companyRepo.save(company)
     }
+
     return cid
   }
 
@@ -72,11 +78,16 @@ export default class CompanyService {
   }
 
   async saveRole(role: IOT.Role) {
-    return await this.roleRepo.update(role)
+    if (role._id) {
+      return await this.roleRepo.save(role)
+    } else {
+      return await this.roleRepo.add(role)
+    }
   }
 
   async removeRole(rid: string) {
-    return await this.roleRepo.delete(rid)
+    let dbItem = await this.roleRepo.get('_id', rid, ['_id', '_rev'])
+    return await this.roleRepo.remove(dbItem._id, dbItem._rev)
   }
 
   async getOperators(cid: string, page?: number) {
@@ -115,11 +126,16 @@ export default class CompanyService {
   }
 
   async saveOperator(operator: IOT.Operator) {
-    return await this.operatorRepo.update(operator)
+    if (operator._id) {
+      return await this.operatorRepo.save(operator)
+    } else {
+      return await this.operatorRepo.add(operator)
+    }
   }
 
   async unbindOperator(uid: string) {
-    return await this.operatorRepo.delete(uid)
+    let dbItem = await this.operatorRepo.get('uid', uid, ['_id', '_rev'])
+    return await this.operatorRepo.remove(dbItem._id, dbItem._rev)
   }
 
   async getMyContact(token: string, page?: number) {

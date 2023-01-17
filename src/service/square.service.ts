@@ -1,8 +1,6 @@
-import { profile } from 'console'
 import { UploadedFile } from 'express-fileupload'
 import { Autowired, Service } from 'lynx-express-mvc'
 import path from 'path'
-import { stringify } from 'querystring'
 import { STATIC_DIR } from '../common/env.const'
 import { Timeline } from '../models'
 import { CommentRepo, MomentRepo, PostRepo } from '../repository/square.repo'
@@ -19,14 +17,14 @@ export class CommentService {
   commentRepo: CommentRepo
 
   async snapComments(type: number, postIds: string) {
-    return await this.commentRepo.pagedComments(type, postIds, 0, 5)
+    return await this.commentRepo.pagedGet(type, postIds, 0, 5)
   }
 
   async bulkComments(type: number, postIds: Array<string>) {
     let comments = new Map<string, Array<Timeline.Comment>>()
 
     for (let postId of postIds) {
-      let result = await this.commentRepo.pagedComments(type, postId, 0, 5)
+      let result = await this.commentRepo.pagedGet(type, postId, 0, 5)
       comments.set(postId, result)
     }
 
@@ -34,20 +32,20 @@ export class CommentService {
   }
 
   async getComments(type: number, postId: string, page: number) {
-    return await this.commentRepo.pagedComments(type, postId, page, 15)
+    return await this.commentRepo.pagedGet(type, postId, page, 15)
   }
 
   async pubComment(comment: Timeline.Comment, token: string) {
     let uid = await this.userService.token2uid(token)
     comment.uid = uid
-    return await this.commentRepo.saveComment(comment)
+    return await this.commentRepo.add(comment)
   }
 
   async delComment(commentId: string, token: string) {
     let uid = await this.userService.token2uid(token)
     let comment = await this.commentRepo.get('_id', commentId)
     if (comment != null && comment.uid == uid) {
-      return await this.commentRepo.deleteComment({ _id: comment._id, _rev: comment._rev })
+      return await this.commentRepo.remove(comment._id, comment._rev)
     } else {
       throw 'cant delete others comment'
     }
@@ -68,7 +66,7 @@ export class PostService {
   }
 
   async getPosts(uid: string, page: number) {
-    return await this.postRepo.getPagedUserPosts(uid, page, 15)
+    return await this.postRepo.pagedGet(uid, page, 15)
   }
 
 }
@@ -105,7 +103,7 @@ export class MomentService {
 
   async getMoments(uid: string, page: number) {
     let profile = await this.userService.getUserInfo(uid)
-    let result = await this.momentRepo.getPagedUserMoments(uid, page, 15)
+    let result = await this.momentRepo.pagedGet(uid, page, 15)
     let mIds = result.map(it => { return it._id })
     let snapComments = await this.commentService.bulkComments(Timeline.CommentType.Moment, mIds)
     result.forEach(it => {
@@ -128,7 +126,7 @@ export class MomentService {
       }
     }
     moment.timestamp = new Date().getTime()
-    return await this.momentRepo.saveMoment(moment)
+    return await this.momentRepo.add(moment)
   }
 
   async delMoment(momentId: string, token: string) {
@@ -136,14 +134,15 @@ export class MomentService {
     let moment = await this.momentRepo.get('_id', momentId)
 
     if (moment != null && moment.uid == uid) {
-      return await this.momentRepo.deleteMoment({ _id: momentId, _rev: moment._rev })
+      return await this.momentRepo.remove(momentId, moment._rev)
     } else {
       throw 'you cant delete this moment'
     }
   }
 
   async like(momentId: string, token: string) {
-    let profile = await this.userService.getUserInfoByToken(token)
+    let uid = await this.userService.token2uid(token)
+    let profile = await this.userService.getUserInfo(uid)
     let moment = await this.momentRepo.get('_id', momentId)
 
     if (moment != null) {
@@ -156,7 +155,7 @@ export class MomentService {
         moment.likes.push({ uid: profile.uid, name: profile.name })
       }
 
-      return await this.momentRepo.updateMoment(moment)
+      return await this.momentRepo.save(moment)
     } else {
       throw 'moment doest existed'
     }

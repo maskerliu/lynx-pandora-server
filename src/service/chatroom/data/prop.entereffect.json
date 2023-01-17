@@ -3,6 +3,7 @@
     "type": 1,
     "name": "夺笋呐",
     "snap": "/_res/8834ccfcf09f462094a9e0943731074f.png",
+    "status": 0,
     "price": 228,
     "expired": 1
   },
@@ -11,6 +12,7 @@
     "name": "小天使",
     "price": 1140,
     "snap": "/_res/e9884b94f94240f9acfe5289f7729d77.png",
+    "status": 0,
     "expired": 7
   },
   {
@@ -18,6 +20,7 @@
     "name": "小恶魔",
     "price": 532,
     "snap": "/_res/6cf4237347924124bf643178741344d0.png",
+    "status": 0,
     "expired": 2
   },
   {
@@ -25,6 +28,7 @@
     "name": "暴富鸭",
     "price": 532,
     "snap": "/_res/7afe8758253244f5875512d0a1af4394.png",
+    "status": 0,
     "expired": 2
   },
   {
@@ -32,6 +36,7 @@
     "name": "银色雪蝶",
     "price": 532,
     "snap": "/_res/81e398a6529e4dff8a4747f841582ee0.png",
+    "status": 0,
     "expired": 2
   },
   {
@@ -39,6 +44,7 @@
     "name": "冥王星轨迹",
     "price": 422,
     "snap": "/_res/10401c0833a144b4be385a6b0d5c3591.png",
+    "status": 0,
     "expired": 2
   },
   {
@@ -46,6 +52,7 @@
     "name": "金星轨迹",
     "price": 890,
     "snap": "/_res/097d2d8a1ece473d90d6e0a079f36d45.png",
+    "status": 0,
     "expired": 3
   },
   {
@@ -53,6 +60,7 @@
     "name": "水星轨迹",
     "price": 422,
     "snap": "/_res/4fd9f7e7c4774ca7ad8f8f058909d022.png",
+    "status": 0,
     "expired": 2
   },
   {
@@ -60,6 +68,7 @@
     "name": "土星轨迹",
     "price": 422,
     "snap": "/_res/e84240bde22049d0b49cbfd4912e5681.png",
+    "status": 0,
     "expired": 2
   },
   {
@@ -67,6 +76,7 @@
     "name": "海王星轨迹",
     "price": 422,
     "snap": "/_res/79032de3c9e144bd81666099aac9d6eb.png",
+    "status": 0,
     "expired": 2
   }
 ]

@@ -34,44 +34,62 @@ export class PropService {
   }
 
   async getPropStore() {
-    let seatFrameProps: Chatroom.PropGroup = { title: '座位框', props: await this.propRepo.getProps(Chatroom.PropType.SeatFrame) }
-    let msgFrameProps: Chatroom.PropGroup = { title: '消息背景', props: await this.propRepo.getProps(Chatroom.PropType.MsgFrame) }
-    let enterEffectProps: Chatroom.PropGroup = { title: '入场特效', props: await this.propRepo.getProps(Chatroom.PropType.EnterEffect) }
+    let props = await this.propRepo.getProps(Chatroom.PropType.SeatFrame)
+    props.forEach(it => { delete it._rev })
+    let seatFrameProps: Chatroom.PropGroup = { title: '座位框', props }
+    props = await this.propRepo.getProps(Chatroom.PropType.MsgFrame)
+    props.forEach(it => { delete it._rev })
+    let msgFrameProps: Chatroom.PropGroup = { title: '消息背景', props }
+    props = await this.propRepo.getProps(Chatroom.PropType.EnterEffect)
+    props.forEach(it => { delete it._rev })
+    let enterEffectProps: Chatroom.PropGroup = { title: '入场特效', props }
 
     return [seatFrameProps, enterEffectProps, msgFrameProps]
   }
 
   async getMyProps(token: string) {
     let uid = await this.userService.token2uid(token)
-    return await this.getUserProps(uid)
+    let groups = await this.getUserPropOrders(uid)
+    groups.forEach(group => {
+      group.orders.forEach(it => {
+        delete it._rev
+      })
+    })
+
+    return groups
   }
 
-  async getUserProps(uid: string) {
+  async getUserPropOrders(uid: string) {
     let propOrders = await this.propOrderRepo.getUserVaildPropOrder(uid)
     let ids = propOrders.map(it => { return { id: it.propId } })
     if (ids.length == 0) return []
 
-    let props = await this.propRepo.bulkProps(ids)
+    let props = await this.propRepo.bulkGet(ids)
     let orders = propOrders.map(it => {
-      delete it._rev
       it.prop = props.find(p => { return p._id == it.propId })
       return it
     })
 
-    let seatFrameOrders = {
-      title: '座位框',
-      orders: orders.filter(it => { return it.prop.type == Chatroom.PropType.SeatFrame })
-    }
-    let msgFrameOrders = {
-      title: '消息背景',
-      orders: orders.filter(it => { return it.prop.type == Chatroom.PropType.MsgFrame })
-    }
-    let enterEffectOrders = {
-      title: '入场特效',
-      orders: orders.filter(it => { return it.prop.type == Chatroom.PropType.EnterEffect })
-    }
+    let seatFrameOrders = [], msgFrameOrders = [], enterEffectOrders = []
+    orders.forEach(it => {
+      switch (it.prop.type) {
+        case Chatroom.PropType.SeatFrame:
+          seatFrameOrders.push(it)
+          break
+        case Chatroom.PropType.MsgFrame:
+          msgFrameOrders.push(it)
+          break
+        case Chatroom.PropType.EnterEffect:
+          enterEffectOrders.push(it)
+          break
+      }
+    })
 
-    return [seatFrameOrders, msgFrameOrders, enterEffectOrders]
+    return [
+      { title: '座位框', orders: seatFrameOrders },
+      { title: '消息背景', orders: msgFrameOrders },
+      { title: '入场特效', orders: enterEffectOrders }
+    ] as Array<{ title: string, orders: Array<Chatroom.PropOrder> }>
   }
 
   async getUserUsingProps(uid: string) {
@@ -79,11 +97,22 @@ export class PropService {
     let propIds = usingOrders.map(it => { return { id: it.propId } })
     if (propIds.length == 0) return [] as Chatroom.UserPropInfo
 
-    let props = await this.propRepo.bulkProps(propIds)
+    let props = await this.propRepo.bulkGet(propIds)
 
-    let seatFrame = props.find(it => { return it.type == Chatroom.PropType.SeatFrame })?.snap
-    let msgFrame = props.find(it => { return it.type == Chatroom.PropType.MsgFrame })?.effect
-    let enterEffect = props.find(it => { return it.type == Chatroom.PropType.EnterEffect })?.snap
+    let seatFrame = null, msgFrame = null, enterEffect = null
+    props.forEach(it => {
+      switch (it.type) {
+        case Chatroom.PropType.SeatFrame:
+          seatFrame = it.snap
+          break
+        case Chatroom.PropType.MsgFrame:
+          msgFrame = it.effect
+          break
+        case Chatroom.PropType.EnterEffect:
+          enterEffect = it.snap
+          break
+      }
+    })
 
     return { seatFrame, msgFrame, enterEffect } as Chatroom.UserPropInfo
   }
@@ -103,16 +132,36 @@ export class PropService {
       status: Chatroom.PropOrderStatus.Off
     }
 
-    return await this.propOrderRepo.addOrder(propOrder)
+    return await this.propOrderRepo.add(propOrder)
   }
 
-  async updateOrderStatus(orderId: string, propId: string, status: Chatroom.PropOrderStatus, token: string) {
+  async updateOrderStatus(orderId: string, propId: string, status: Chatroom.PropOrderStatus, type: Chatroom.PropType, token: string) {
     let uid = await this.userService.token2uid(token)
     let order = await this.propOrderRepo.get('_id', orderId)
     if (order.propId != propId || uid == null || order.expired < new Date().getTime()) throw 'info error'
 
+    let orders = []
     order.status = status
-    return await this.propOrderRepo.saveOrder(order)
+    orders.push(order)
+
+    if (status == Chatroom.PropOrderStatus.On) {
+      let groups = await this.getUserPropOrders(uid)
+
+      let i = 0;
+      for (i = 0; i < groups.length; ++i) {
+        if (groups[i].orders[0].prop.type == type) break
+      }
+      let needUpdates = groups[i].orders.filter(it => { return it.status == Chatroom.PropOrderStatus.On })
+      needUpdates.forEach(it => {
+        delete it.prop
+        it.status = Chatroom.PropOrderStatus.Off
+      })
+      orders.push(...needUpdates)
+    }
+
+    await this.propOrderRepo.bulkDocs(orders)
+
+    return await this.getUserUsingProps(uid)
   }
 
 

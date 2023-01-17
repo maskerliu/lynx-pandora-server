@@ -32,7 +32,7 @@ export class OperatorRepo extends BaseRepo<IOT.Operator> {
     }
   }
 
-  public async pagedGet(cid: string, page: number, pageSize: number) {
+  async pagedGet(cid: string, page: number, pageSize: number) {
     let request: PouchDB.Find.FindRequest<any> = {
       selector: {
         cid,
@@ -47,36 +47,6 @@ export class OperatorRepo extends BaseRepo<IOT.Operator> {
     let result = await this.find(request)
     result.forEach(it => { delete it._rev })
     return result
-  }
-
-  public async update(item: IOT.Operator) {
-    let result = null
-    let getResult = await this.get('uid', item.uid, ['_id', '_rev'])
-    if (getResult != null) {
-      item._id = getResult._id
-      item._rev = getResult._rev
-      result = await this.pouchdb.put(item)
-    } else {
-      result = await this.pouchdb.post(item)
-    }
-
-    if (result.ok)
-      return result.id
-    else
-      throw '更新失败'
-  }
-
-  public async delete(uid: string) {
-    let result = false
-    try {
-      let item = await this.get('uid', uid, ['_id', '_rev'])
-      let removeResult = await this.pouchdb.remove(item._id, item._rev)
-      result = removeResult.ok
-    } catch (err) {
-      throw '删除失败' + err
-    } finally {
-      return result
-    }
   }
 
 }

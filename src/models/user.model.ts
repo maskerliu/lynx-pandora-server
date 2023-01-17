@@ -27,11 +27,27 @@ export namespace User {
     gender?: UserGender,
     avatar?: string,
     onlineStatus?: UserOnlineStatus
+    score: number
   }
 
   export interface Account extends Common.DBDoc {
     phone: string,
     encryptPWD?: string,
     token?: string,
+  }
+
+  export interface GradeItem extends Common.DBDoc {
+    level: number
+    score: number
+    icon: string
+    name: string
+    group: string
+  }
+
+  export interface GradeScoreRecord extends Common.DBDoc {
+    uid: string
+    score: number
+    note: string // 积分来源备注
+    timestamp: number
   }
 }

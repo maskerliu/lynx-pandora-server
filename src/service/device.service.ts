@@ -35,7 +35,7 @@ export default class DeviceMgrService {
             lat: 31.2422,
             lng: 121.3232,
           }
-          await this.deviceRepo.update(device)
+          await this.deviceRepo.add(device)
         }
         break
       default:
@@ -47,7 +47,7 @@ export default class DeviceMgrService {
     return await this.deviceRepo.search('deviceId', keyword, ['_id', 'deviceId', 'address'])
   }
 
-  public async getDeviceInfo(deviceId: string) {
+  public async deviceInfo(deviceId: string) {
     let result = await this.deviceRepo.get('deviceId', deviceId)
     result.lat = result?.lat ? result.lat : 31.2422
     result.lng = result?.lng ? result.lng : 121.3232
@@ -56,11 +56,16 @@ export default class DeviceMgrService {
   }
 
   public async save(device: IOT.Device) {
-    return await this.deviceRepo.update(device)
+    if (device._id) {
+      return await this.deviceRepo.save(device)
+    } else {
+      return await this.deviceRepo.add(device)
+    }
   }
 
   public async delete(deviceId: string) {
-    let result = await this.deviceRepo.delete(deviceId)
+    let dbItem = await this.deviceRepo.get('deviceId', deviceId)
+    let result = await this.deviceRepo.remove(dbItem._id, dbItem._rev)
     if (result)
       return `设备[${deviceId}]已被移除`
     else

@@ -102,4 +102,11 @@ export namespace RemoteAPI {
     Exchange: '/exchange', // 魅力值兑换钻石,
     PurseRecords: '/purseRecords'
   }
+
+  export const VIP = {
+    BasePath: '/vip',
+    Config: '/config',
+    MyVIP: '/my',
+    Buy: '/buy'
+  }
 }

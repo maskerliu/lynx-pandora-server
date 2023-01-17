@@ -8,6 +8,7 @@ import './controllers/im.controller'
 import './controllers/chatroom.controller'
 import './controllers/square.controller'
 import './controllers/payment.controller'
+import './controllers/vip.controller'
 
 @Router()
 export default class BizRouter {

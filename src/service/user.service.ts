@@ -2,7 +2,6 @@ import { UploadedFile } from 'express-fileupload'
 import { Autowired, Service } from 'lynx-express-mvc'
 import md5 from 'md5'
 import path from 'path'
-import { getLocalIP } from '../common/common.utils'
 import { STATIC_DIR } from '../common/env.const'
 import { User } from '../models/user.model'
 import { AccountRepo, UserInfoRepo } from '../repository/user.repo'
@@ -43,7 +42,7 @@ export default class UserService {
     let uid = topic.split('/').pop()
     let profile = await this.userInfoRepo.get('uid', uid)
     profile.onlineStatus = message.length == 0 ? User.UserOnlineStatus.Online : User.UserOnlineStatus.Offline
-    await this.userInfoRepo.update(profile)
+    await this.userInfoRepo.save(profile)
   }
 
   async userOnlineStatus(uid: string) {
@@ -80,33 +79,47 @@ export default class UserService {
         phone: phone,
         encryptPWD: pwd
       }
-      let uid = await this.accountRepo.update(account)
+      let uid = await this.accountRepo.add(account)
     }
     return token
   }
 
-  async updateUserAvatar(avatar: UploadedFile, token: string) {
-    if (avatar == null) {
-      return '头像更新失败'
-    }
+  async updateAvatar(avatar: UploadedFile, token: string) {
+    if (avatar == null) throw '头像更新失败'
 
-    let profile = await this.getUserInfoByToken(token)
+    let uid = await this.token2uid(token)
+    let profile = await this.userInfoRepo.get('uid', uid)
+
     let ext = avatar.name.split('.').pop()
     await avatar.mv(path.join(STATIC_DIR, avatar.md5 + '.' + ext))
-    profile.avatar = `/_res/${avatar.md5}.${ext}`
+    if (profile == null) {
+      profile = { uid, score: 0, avatar: `/_res/${avatar.md5}.${ext}` }
+      await this.userInfoRepo.add(profile)
+    } else {
+      profile.avatar = `/_res/${avatar.md5}.${ext}`
+      await this.userInfoRepo.save(profile)
+    }
 
-    delete profile.encryptPWD
-    delete profile.token
-    delete profile.phone
-    await this.saveUserProfile(profile, token)
     return '头像更新成功'
   }
 
-  async saveUserProfile(profile: User.Profile, token: string) {
-    let account = await this.accountRepo.get('token', token)
-    if (profile.uid != account._id) throw '登录信息过期，请重新登录'
-    profile.uid = account._id
-    return await this.userInfoRepo.update(profile)
+  async updateScore(uid: string, score: number) {
+    let profile = await this.userInfoRepo.get('uid', uid)
+    profile.score = profile.score != null ? profile.score + score : score
+
+    await this.userInfoRepo.save(profile)
+  }
+
+  async saveProfile(profile: User.Profile, token: string) {
+    let uid = await this.token2uid(token)
+    if (uid == null) throw '登录信息过期，请重新登录'
+    let dbProfile = await this.userInfoRepo.get('uid', uid)
+    if (dbProfile) {
+      return await this.userInfoRepo.add(profile)
+    } else {
+      profile._rev = dbProfile._rev
+      return await this.userInfoRepo.save(profile)
+    }
   }
 
   async findUser(phone: string) {
@@ -122,12 +135,7 @@ export default class UserService {
   }
 
   async bulkUsers(uids: Array<string>) {
-    return await this.userInfoRepo.bulkUsers(uids)
-  }
-
-  async getUserInfoByToken(token: string) {
-    let account = await this.accountRepo.get('token', token)
-    return await this.genProfile(account)
+    return await this.userInfoRepo.bulkGet(uids)
   }
 
   async getUserInfo(uid: string) {
@@ -138,7 +146,8 @@ export default class UserService {
   private async genProfile(account?: User.Account) {
     if (account == null) throw '未找到该用户'
     let profile = await this.userInfoRepo.get('uid', account._id)
-    if (profile == null) profile = { uid: account._id }
+    if (profile == null) profile = { uid: account._id, score: 0 }
+    if (profile.score == null) profile.score = 0
 
     let finalProfile = Object.assign(account, profile)
     delete finalProfile._id

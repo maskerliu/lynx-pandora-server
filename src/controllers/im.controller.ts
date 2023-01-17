@@ -27,7 +27,7 @@ export default class IMController {
   }
 
   @Post(RemoteAPI.IM.SyncTo)
-  async syncTo(@BodyParam('session') session: IM.Session, @FileParam('thumb') thumb: UploadedFile) {
+  async syncTo(@BodyParam('session') session: IM.Session, @FileParam('thumb') thumb?: UploadedFile) {
     return await this.imService.saveSession(session, thumb)
   }
 

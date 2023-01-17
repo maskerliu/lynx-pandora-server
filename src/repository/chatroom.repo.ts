@@ -252,6 +252,8 @@ export class GiftRepo extends BaseRepo<Chatroom.Gift> {
   }
 
   async getGifts(roomId: string, type: Chatroom.GiftType) {
+    console.error(roomId, type)
+
     let req: PouchDB.Find.FindRequest<any> = {
       selector: {
         type,
@@ -261,12 +263,9 @@ export class GiftRepo extends BaseRepo<Chatroom.Gift> {
       sort: [{ 'type': 'asc' }, { 'status': 'asc' }, { 'price': 'asc' }],
       use_index: 'idx-type'
     }
-
-    let resp = await this.pouchdb.find(req)
-    return resp.docs.map(it => {
-      delete it._rev
-      return it as Chatroom.Gift
-    })
+    console.log(req)
+    let resp = await this.find(req)
+    return resp
   }
 }
 
@@ -285,7 +284,14 @@ export class PropRepo extends BaseRepo<Chatroom.Prop>{
     await this.pouchdb.bulkDocs(props)
   }
 
-  async bulkProps(docs: Array<{ id: string }>) {
+  async all() {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {},
+    }
+    return await this.find(req)
+  }
+
+  async bulkGet(docs: Array<{ id: string }>) {
     let resp = await this.pouchdb.bulkGet({ docs })
 
     let props = resp.results.map(it => {
@@ -299,16 +305,9 @@ export class PropRepo extends BaseRepo<Chatroom.Prop>{
 
   async getProps(type: Chatroom.PropType) {
     let req: PouchDB.Find.FindRequest<any> = {
-      selector: {
-        type
-      },
+      selector: { type, status: Chatroom.PropStatus.On },
     }
-    let resp = await this.pouchdb.find(req)
-
-    return resp.docs.map(it => {
-      delete it._rev
-      return it as Chatroom.Prop
-    })
+    return await this.find(req)
   }
 }
 
@@ -352,14 +351,14 @@ export class PropOrderRepo extends BaseRepo<Chatroom.PropOrder>{
     return resp.docs.map(it => { return it as Chatroom.PropOrder })
   }
 
-  async getUserUsingProps(uid: string) {
+  async getUserUsingProps(uid: string, type?: Chatroom.PropType) {
     let time = new Date().getTime()
     let req: PouchDB.Find.FindRequest<any> = {
       selector: {
         uid,
         timestamp: { $lt: time },
         expired: { $gte: time },
-        status: Chatroom.PropOrderStatus.On,
+        status: Chatroom.PropOrderStatus.On
       },
       sort: [{ uid: 'asc' }, { timestamp: 'asc' }],
       use_index: 'idx-uid'
@@ -367,20 +366,6 @@ export class PropOrderRepo extends BaseRepo<Chatroom.PropOrder>{
 
     let resp = await this.pouchdb.find(req)
     return resp.docs.map(it => { return it as Chatroom.PropOrder })
-  }
-
-  async addOrder(order: Chatroom.PropOrder) {
-    delete order._id
-    delete order._rev
-    let resp = await this.pouchdb.post(order)
-    if (resp.ok) return resp.id
-    else throw 'fail to add prop order'
-  }
-
-  async saveOrder(order: Chatroom.PropOrder) {
-    let resp = await this.pouchdb.put(order)
-    if (resp.ok) return resp.id
-    else throw 'fail to update prop order'
   }
 }
 
@@ -394,18 +379,6 @@ export class GiftOrderRepo extends BaseRepo<Chatroom.GiftOrder>{
       console.error('initDB', err)
     }
   }
-
-  async addOrder(order: Chatroom.GiftOrder) {
-    let resp = await this.pouchdb.post(order)
-    if (resp.ok) return resp.id
-    else throw 'fail to add gift order'
-  }
-
-  async updateOrder(order: Chatroom.GiftOrder) {
-    let resp = await this.pouchdb.put(order)
-    if (resp.ok) return resp.id
-    else throw 'fail to add gift order'
-  }
 }
 
 @Repository(DB_DIR, 'chatroom-reward-record.db')
@@ -416,9 +389,5 @@ export class RewardRecordRepo extends BaseRepo<Chatroom.RewardRecord>{
     } catch (err) {
       console.error('initDB', err)
     }
-  }
-
-  async addRecords(records: Array<Chatroom.RewardRecord>) {
-    await this.pouchdb.bulkDocs(records)
   }
 }

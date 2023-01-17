@@ -1,0 +1,142 @@
+[
+  {
+    "name": "谢老板",
+    "type": 2,
+    "status": 0,
+    "snap": "/_res/a88ee07c430f4dd78eb50496ef2368fe.png",
+    "gif": "/_res/946c3fd5b9704bf1a41ae274f6f8b0e1.gif"
+  },
+  {
+    "snap": "/_res/5f1315fbd89d4a368c25af705fc1a738.png",
+    "gif": "/_res/4cfb44751ce14a729e523746f6de773f.gif",
+    "name": "看书",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/c1d5a759a8d74775bae68b4cb4cbfd73.png",
+    "gif": "/_res/9aee50e835f54c728cfb5e57f3b8eb94.gif",
+    "name": "棒棒哒",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/0de191cd4a394b8099f0f4fa4e729564.png",
+    "gif": "/_res/0bb8a2cc532f4be4a782ac9e35f02078.gif",
+    "name": "出土",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/d18cdad61abf4ac4aa0e3adbcdd1ef75.png",
+    "gif": "/_res/9a5012e393fb48ae991617c39071c13a.gif",
+    "name": "打碟",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/38dd1b58cd9140f0a71968ff96f4ec4c.png",
+    "gif": "/_res/fded798a6b0e47ef81df39a9c03897af.gif",
+    "name": "废鱼",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/372e990c262f45c091ddc720495a57bc.png",
+    "gif": "/_res/806d438979f44d18aa31b68ad044e34c.gif",
+    "name": "尴尬",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/a170b9547117433396ca32ff2bfdeb16.png",
+    "gif": "/_res/e9cfec0f2e374d65903157b6aae0eea3.gif",
+    "name": "告辞",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/d11e5d52324348eb8f94b92c4e2e3a41.png",
+    "gif": "/_res/1f3150662f1b4a98aca290e71b6a3041.gif",
+    "name": "鼓掌",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/f24ad535bc9440d2aebafd3d34d1155f.png",
+    "gif": "/_res/149a8d0ca63a4a1c850bb9838fe09f99.gif",
+    "name": "好的",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/9a2e2e367cc5476e98566b4b384b6dd5.png",
+    "gif": "/_res/94282feeae8a4231b26085be04d80a20.gif",
+    "name": "花痴",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/9d80f1651484406090719e0d39fd6848.png",
+    "gif": "/_res/d09a5c9501964c6eba2364b94061ff75.gif",
+    "name": "加油",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/74c902e53cd54eb2a6c58275b2b0652b.png",
+    "gif": "/_res/b8e6d7a2db944bc885fafcded427a196.gif",
+    "name": "惊恐",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/55b7aba91a98449e84c5d3f090acbbc2.png",
+    "gif": "/_res/a70ada3fe9d64a16bb09e1b107c29d49.gif",
+    "name": "路过",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/1bf679d5821a4039b7131d113d8dc6da.png",
+    "gif": "/_res/d2d5c451212647da8ec484f23544358f.gif",
+    "name": "潜水",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/b19eb11436154414a63db962f6e78fd1.png",
+    "gif": "/_res/69c1330606c342aaa087ce633af2e566.gif",
+    "name": "生气",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/692d1fa04c704b77a550ad29913637d8.png",
+    "gif": "/_res/706c196ad7464d2cbc62175b63aa2aad.gif",
+    "name": "蟹老板",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/137b2d7470284e01b725da9d5cab3587.png",
+    "gif": "/_res/60b5ce3366384e02986541756adffb6a.gif",
+    "name": "心呼呼",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/2cd2baecfd5f49f8b33fd82dd8260f0b.png",
+    "gif": "/_res/0753046645294d548934868cfc863467.gif",
+    "name": "摇摇",
+    "type": 2,
+    "status": 0
+  },
+  {
+    "snap": "/_res/3ef43e1ff4854d658266e00fa3982efa.png",
+    "gif": "/_res/6b5a2afd325f469687a866cc3c0bbbcd.gif",
+    "name": "嘿嘿",
+    "type": 2,
+    "status": 0
+  }
+]

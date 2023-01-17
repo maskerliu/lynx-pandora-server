@@ -3,7 +3,7 @@ import { DB_DIR } from '../common/env.const'
 import { User } from '../models/user.model'
 import BaseRepo from './base.repo'
 
-@Repository(DB_DIR, 'account.db')
+@Repository(DB_DIR, 'user-account.db')
 export class AccountRepo extends BaseRepo<User.Account> {
   async init() {
     try {
@@ -27,7 +27,7 @@ export class AccountRepo extends BaseRepo<User.Account> {
   }
 }
 
-@Repository(DB_DIR, 'user-info.db')
+@Repository(DB_DIR, 'user-profile.db')
 export class UserInfoRepo extends BaseRepo<User.Profile> {
   async init() {
     try {
@@ -37,8 +37,7 @@ export class UserInfoRepo extends BaseRepo<User.Profile> {
     }
   }
 
-  async bulkUsers(uids: Array<string>) {
-
+  async bulkGet(uids: Array<string>) {
     let request: PouchDB.Find.FindRequest<any> = {
       selector: {
         uid: { $in: uids }
@@ -50,5 +49,31 @@ export class UserInfoRepo extends BaseRepo<User.Profile> {
       delete it._rev
       return it as User.Profile
     })
+  }
+}
+
+@Repository(DB_DIR, 'user-grade.db')
+export class GradeRepo extends BaseRepo<User.GradeItem> {
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['uid'], ddoc: 'idx-uid' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
+  }
+
+  async importData(grades: Array<User.GradeItem>) {
+    await this.pouchdb.bulkDocs(grades)
+  }
+}
+
+@Repository(DB_DIR, 'grade-score-record.db')
+export class GradeScoreRecordRepo extends BaseRepo<User.GradeScoreRecord> {
+  async init() {
+    try {
+      await this.pouchdb.createIndex({ index: { fields: ['uid'], ddoc: 'idx-uid' } })
+    } catch (err) {
+      console.error('initDB', err)
+    }
   }
 }

@@ -4,6 +4,7 @@
     "name": "朝朝",
     "price": 495,
     "snap": "/_res/6b8a1c1ab8414211b739440d3e00a7bd.png",
+    "status":0,
     "expired": 2
   },
   {
@@ -11,6 +12,7 @@
     "name": "暮暮",
     "price": 495,
     "snap": "/_res/ac290bf105f541b2a7eaf2c44d3f646c.png",
+    "status":0,
     "expired": 2
   },
   {
@@ -18,6 +20,7 @@
     "name": "萌鼠绅士",
     "price": 440,
     "snap": "/_res/efaad8c3889c40f38d6e102df10f5c0f.png",
+    "status":0,
     "expired": 2
   },
   {
@@ -25,6 +28,7 @@
     "name": "童心世界",
     "price": 9999,
     "snap": "/_res/99660d9a81e64f0c85f3346dd06e7182.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -32,6 +36,7 @@
     "name": "小天使",
     "price": 495,
     "snap": "/_res/b57b609448bc4f959ad9a88e8771be41.png",
+    "status":0,
     "expired": 2
   },
   {
@@ -39,6 +44,7 @@
     "name": "魔幻光环",
     "price": 9999,
     "snap": "/_res/7a7b348a2c664ee3981bc5433c2bb16e.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -46,6 +52,7 @@
     "name": "仲夏之梦",
     "price": 9999,
     "snap": "/_res/9c1bc4f97aa046f198b1a69462f476ff.png",
+    "status":0,
     "expired": 3
   },
   {
@@ -53,6 +60,7 @@
     "name": "圣诞之星",
     "price": 1,
     "snap": "/_res/7354bc37882149d4b924cf2c409e71a4.png",
+    "status":0,
     "expired": 1
   },
   {
@@ -60,6 +68,7 @@
     "name": "绣球花",
     "price": 440,
     "snap": "/_res/c70aaa455b7c1f66e018fc519add6268.png",
+    "status":0,
     "expired": 2
   },
   {
@@ -67,6 +76,7 @@
     "name": "暴富鸭",
     "price": 645,
     "snap": "/_res/4703e5927a1d49b09c91522de8625b62.png",
+    "status":0,
     "expired": 3
   },
   {
@@ -74,6 +84,7 @@
     "name": "小恶魔",
     "price": 495,
     "snap": "/_res/8677310448f1416fa2e21c14775a2d71.png",
+    "status":0,
     "expired": 2
   },
   {
@@ -81,6 +92,7 @@
     "name": "夺笋呐",
     "price": 495,
     "snap": "/_res/af6bf1d15ef2438c899fa100dc055cda.png",
+    "status":0,
     "expired": 2
   },
   {
@@ -88,6 +100,7 @@
     "name": "银色雪蝶",
     "price": 645,
     "snap": "/_res/02147b9d42de42938d7e74f580f0c629.png",
+    "status":0,
     "expired": 2
     
   },
@@ -96,6 +109,7 @@
     "name": "草莓",
     "price": 18000,
     "snap": "/_res/bdf828171851476a8a259784cb7bb986.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -103,6 +117,7 @@
     "name": "桃子",
     "price": 18000,
     "snap": "/_res/73b64b65d3f0475096fff99d689874b5.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -110,6 +125,7 @@
     "name": "车厘子",
     "price": 18000,
     "snap": "/_res/f3c03e90b2c0462093868ffb672eb9aa.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -117,6 +133,7 @@
     "name": "石榴",
     "price": 18000,
     "snap": "/_res/a27997f07ce745c6bb949de021cddcbf.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -124,6 +141,7 @@
     "name": "甘蔗",
     "price": 18000,
     "snap": "/_res/3a6e141431b243c0bb592ffc46d13eca.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -131,6 +149,7 @@
     "name": "蓝莓",
     "price": 18000,
     "snap": "/_res/a77d5066287c454ab7691b78c3da6943.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -138,6 +157,7 @@
     "name": "荔枝",
     "price": 18000,
     "snap": "/_res/212044a598354c3a8e7a5b04ebb8552b.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -145,6 +165,7 @@
     "name": "橙子",
     "price": 18000,
     "snap": "/_res/37d7b4294f7f50e07c7d48ce013a4815.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -152,6 +173,7 @@
     "name": "甜甜苹果",
     "price": 18000,
     "snap": "/_res/cfefe66177c946aab62543109a821921.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -159,6 +181,7 @@
     "name": "葡萄",
     "price": 18000,
     "snap": "/_res/90fad3d6d66448ec9e8aacee2f572af9.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -166,6 +189,7 @@
     "name": "椰子",
     "price": 18000,
     "snap": "/_res/23437342c32f4907bd3e9a25ef7ca607.png",
+    "status":0,
     "expired": 7
   },
   {
@@ -173,6 +197,7 @@
     "name": "西瓜",
     "price": 18000,
     "snap": "/_res/709251c5a98346c99e74c032a29c30ea.png",
+    "status":0,
     "expired": 7
   }
 ]

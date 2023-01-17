@@ -9,13 +9,13 @@ import PouchDB from 'pouchdb-node'
 export default class DBMgrService {
 
   private dbInfos: Array<string> = [
-    'account.db',
-    'user-info.db',
+    'user-account.db',
+    'user-profile.db',
     'company.db',
     'role.db',
     'operator.db',
-    'device.db',
-    'device-data.db',
+    'iot-device.db',
+    'iot-monitor-data.db',
     'im-session.db'
   ]
 

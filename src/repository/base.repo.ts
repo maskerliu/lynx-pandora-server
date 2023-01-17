@@ -46,59 +46,58 @@ export default abstract class BaseRepo<T extends Common.DBDoc> {
   }
 
   public async get(field: string, query: string, returnFields?: Array<string>) {
-    let request: any = {
+    let req: any = {
       selector: {
         _id: { $ne: /_design\/idx/ },
       },
       limit: 1,
       fields: returnFields
     }
-    request.selector[field] = { $eq: query }
-    let result = await this.find(request)
+    req.selector[field] = { $eq: query }
+    let result = await this.find(req)
     return result[0] as T
   }
 
+  // public async bulkGet(ids: Array<string>) {
+  //   let req: PouchDB.Find.FindRequest<any> = {
+  //     selector: {
+  //       _id: { $in: ids }
+  //     }
+  //   }
+  //   return await this.find(req)
+  // }
+
   public async find(request: PouchDB.Find.FindRequest<any>) {
-    let data: Array<T> = new Array()
-    let result = await this.pouchdb.find(request)
-    if (result.docs) {
-      result.docs.forEach(it => {
-        data.push(it as T)
-      })
-    }
-    return data
+    let resp = await this.pouchdb.find(request)
+    return resp.docs.map(it => {
+      return it as T
+    })
   }
 
-  public async update(item: T) {
-    let result = null
-    if (item._id != null) {
-      let getResult = await this.get('_id', item._id, ['_rev'])
-      if (getResult != null) {
-        item._rev = getResult._rev
-        result = await this.pouchdb.put(item)
-      } else {
-        result = await this.pouchdb.post(item)
-      }
-    } else {
-      result = await this.pouchdb.post(item)
-    }
-
-    if (result.ok)
-      return result.id
-    else
-      throw '更新失败'
+  public async add(item: T) {
+    if (item._id) throw 'cant add a item with _id'
+    let resp = await this.pouchdb.post(item)
+    if (resp.ok) return resp.id
+    else throw 'fail to add'
   }
 
-  public async delete(id: string) {
-    let result = false
-    try {
-      let item = await this.get('_id', id, ['_id', '_rev'])
-      let removeResult = await this.pouchdb.remove(item._id, item._rev)
-      result = removeResult.ok
-    } catch (err) {
-      throw '删除失败' + err
-    } finally {
-      return result
-    }
+  public async save(item: T) {
+    let dbItem = await this.pouchdb.get(item._id)
+    if (dbItem == null || dbItem._rev == null) throw 'cant save a item withour _id or _rev'
+    item._rev = dbItem._rev
+    let resp = await this.pouchdb.put(item)
+    if (resp.ok) return resp.id
+    else throw 'fail to save'
   }
+
+  public async bulkDocs(items: Array<T>) {
+    let resp = await this.pouchdb.bulkDocs(items)
+    return resp.map(it => { return it.id })
+  }
+
+  public async remove(id: string, rev: string) {
+    let resp = await this.pouchdb.remove(id, rev)
+    return resp.ok
+  }
+  
 }
