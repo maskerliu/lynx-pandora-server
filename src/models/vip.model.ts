@@ -16,6 +16,7 @@ export namespace VIP {
     name: string
     type: VIPType
     price: number
+    discount: number
     expired: number
     status: VIPStatus
     seq: number

@@ -3,7 +3,8 @@
     "type": 0,
     "status": 0,
     "name": "普通会员",
-    "price": 188,
+    "price": 1880,
+    "discount": 1880,
     "expired": 30,
     "seq": 0
   },
@@ -12,6 +13,7 @@
     "status": 0,
     "name": "超级会员",
     "price": 2880,
+    "discount": 2880,
     "expired": 30,
     "seq": 1
   },
@@ -19,7 +21,8 @@
     "type": 0,
     "status": 0,
     "name": "普通会员(半年)",
-    "price": 1015,
+    "price": 11280,
+    "discount": 10152,
     "expired": 180,
     "seq": 2
   },
@@ -27,7 +30,8 @@
     "type": 1,
     "status": 0,
     "name": "超级会员(半年)",
-    "price": 14688,
+    "price": 1728,
+    "discount":14688,
     "expired": 180,
     "seq": 3
   }

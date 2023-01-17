@@ -65,6 +65,13 @@ export class GradeRepo extends BaseRepo<User.GradeItem> {
   async importData(grades: Array<User.GradeItem>) {
     await this.pouchdb.bulkDocs(grades)
   }
+
+  async all() {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: {}
+    }
+    return await this.find(req)
+  }
 }
 
 @Repository(DB_DIR, 'grade-score-record.db')

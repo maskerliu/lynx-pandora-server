@@ -25,7 +25,9 @@ export class GradeService {
   }
 
   async getGradeConfig() {
-
+    let result = await this.gradeRepo.all()
+    result.forEach(it => { delete it._rev })
+    return result
   }
 
   async updateScore(uid: string, score: number, note: string) {
