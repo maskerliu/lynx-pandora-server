@@ -252,8 +252,6 @@ export class GiftRepo extends BaseRepo<Chatroom.Gift> {
   }
 
   async getGifts(roomId: string, type: Chatroom.GiftType) {
-    console.error(roomId, type)
-
     let req: PouchDB.Find.FindRequest<any> = {
       selector: {
         type,
@@ -263,7 +261,6 @@ export class GiftRepo extends BaseRepo<Chatroom.Gift> {
       sort: [{ 'type': 'asc' }, { 'status': 'asc' }, { 'price': 'asc' }],
       use_index: 'idx-type'
     }
-    console.log(req)
     let resp = await this.find(req)
     return resp
   }

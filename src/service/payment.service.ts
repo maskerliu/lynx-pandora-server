@@ -1,4 +1,4 @@
-import { Autowired, Service } from 'lynx-express-mvc'
+import { Autowired, BizCode, BizFail, Service } from 'lynx-express-mvc'
 import { Payment } from '../models/payment.model'
 import { PayRecordRepo, PurseRecordRepo, WalletRepo } from '../repository/payment.repo'
 import UserService from './user.service'
@@ -78,20 +78,21 @@ export class PaymentService {
     delete wallet._id
     delete wallet._rev
     let payRecord: Payment.PayRecord = {
-      uid, channel,
+      uid, channel, note: null,
       diamonds: purchase.diamonds,
       timestamp: new Date().getTime(),
       snap: wallet
+
     }
     await this.payRepo.add(payRecord)
     delete newWallet._rev
     return newWallet
   }
 
-  async consume(diamonds: number, uid: string) {
+  async consume(diamonds: number, uid: string, note?: string) {
     let wallet = await this.walletRepo.get('uid', uid)
-    if (uid == null || wallet == null) throw 'user or purchase info error!'
-    if (wallet.diamonds - diamonds < 0) throw '钻石不足，请充值'
+    if (wallet == null) throw 'wallet info error!'
+    if (wallet.diamonds - diamonds < 0) throw new BizFail(BizCode.FAIL, '钻石不足，请充值')
     let newWallet = Object.assign({}, wallet)
     newWallet.diamonds -= diamonds
     await this.walletRepo.save(newWallet)
@@ -99,7 +100,7 @@ export class PaymentService {
     delete wallet._id
     delete wallet._rev
     let payRecord: Payment.PayRecord = {
-      uid, channel: null,
+      uid, channel: null, note,
       diamonds: -diamonds,
       timestamp: new Date().getTime(),
       snap: wallet
@@ -107,6 +108,12 @@ export class PaymentService {
     return await this.payRepo.add(payRecord)
   }
 
+  async income(diamonds: number, uid: string, note?: string) {
+    let wallet = await this.walletRepo.get('uid', uid)
+    if (wallet == null) throw 'wallet info error!'
+    wallet.diamonds += diamonds
+    return await this.walletRepo.save(wallet)
+  }
 
   async exchangeConfig(token: string) {
     return { purchases: ExchangePurchases }
@@ -118,7 +125,7 @@ export class PaymentService {
     let wallet = await this.walletRepo.get('uid', uid)
     if (uid == null || purchase == null) throw 'user or purchase info error!'
 
-    if (wallet.purse - purchase.discount < 0) throw '魅力值不够，请选择适当兑换项'
+    if (wallet.purse - purchase.discount < 0) throw new BizFail(BizCode.FAIL, '魅力值不够，请选择适当兑换项')
 
     let timestamp = new Date().getTime()
     let newWallet = Object.assign({}, wallet)
@@ -128,7 +135,7 @@ export class PaymentService {
     delete wallet._id
     delete wallet._rev
     let payRecord: Payment.PayRecord = {
-      uid, timestamp,
+      uid, timestamp, note: '魅力值兑换',
       channel: 'exchange',
       diamonds: purchase.diamonds,
       snap: wallet

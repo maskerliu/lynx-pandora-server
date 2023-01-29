@@ -166,6 +166,8 @@ export class ChatroomService {
     }
     msgs.push(msg)
     this.mqClient.sendMsg(`_room/${roomId}`, JSON.stringify(msgs))
+
+    return 'success'
   }
 
   async reward(roomId: string, giftId: string, count: number, receivers: string[], token: string) {

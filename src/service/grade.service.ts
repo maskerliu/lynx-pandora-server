@@ -16,18 +16,42 @@ export class GradeService {
   @Autowired()
   private recordRepo: GradeScoreRecordRepo
 
+  Grade_Configs: Array<User.GradeItem> = []
+
+
   async init() {
     // await this.gradeRepo.importData(GradeConfigs)
+    let result = await this.gradeRepo.all()
+    result.forEach(it => { delete it._rev })
+    this.Grade_Configs = result
   }
 
   async getMyGradePrivileges(token: string) {
     let uid = await this.userService.token2uid(token)
   }
 
+  async userGradeInfo(uid: string) {
+    let profile = await this.userService.getUserInfo(uid)
+
+    let i = 0
+    for (i = 0; i < GradeConfigs.length; ++i) {
+      if (this.Grade_Configs[i].score > profile.score) break
+    }
+
+    let gradeInfo: User.UserGradeInfo = {
+      gradeLevel: this.Grade_Configs[i].level,
+      curGradeIcon: this.Grade_Configs[i].icon,
+      curGradeName: this.Grade_Configs[i].icon,
+      nextGradeIcon: this.Grade_Configs[i + 1]?.icon,
+      nextGradeName: this.Grade_Configs[i + 1]?.name,
+      diffScore: this.Grade_Configs[i + 1]?.score - profile.score
+    }
+
+    return gradeInfo
+  }
+
   async getGradeConfig() {
-    let result = await this.gradeRepo.all()
-    result.forEach(it => { delete it._rev })
-    return result
+    return this.Grade_Configs
   }
 
   async updateScore(uid: string, score: number, note: string) {

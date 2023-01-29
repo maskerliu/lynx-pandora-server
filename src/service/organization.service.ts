@@ -1,10 +1,11 @@
 import { Autowired, Service } from 'lynx-express-mvc'
 import { IOT } from '../models'
+import { Organization } from '../models/organization.model'
 import { CompanyRepo, OperatorRepo, RoleRepo } from '../repository/company.repo'
 import UserService from './user.service'
 
 
-const All_Privileges: Array<IOT.Privilege> = [
+const All_Privileges: Array<Organization.Privilege> = [
   { id: '1', name: '公司管理' },
   { id: '2', name: '角色管理' },
   { id: '3', name: '人员管理' },
@@ -12,7 +13,7 @@ const All_Privileges: Array<IOT.Privilege> = [
 ]
 
 @Service()
-export default class CompanyService {
+export default class OrganizationService {
 
   @Autowired()
   private userService: UserService
@@ -47,7 +48,7 @@ export default class CompanyService {
     return company
   }
 
-  async saveCompany(company: IOT.Company, token: string) {
+  async saveCompany(company: Organization.Company, token: string) {
     delete company.privileges
     delete company.ownerName
     delete company.roles
@@ -56,10 +57,10 @@ export default class CompanyService {
     if (company._id == null) {
       cid = await this.companyRepo.add(company)
 
-      company.status = IOT.CompanyStatus.Verifing
+      company.status = Organization.CompanyStatus.Verifing
       let uid = await this.userService.token2uid(token)
       let profile = await this.userService.getUserInfo(uid)
-      let operator: IOT.Operator = {
+      let operator: Organization.Operator = {
         uid: profile.uid,
         name: profile.name,
         cid: cid,
@@ -77,7 +78,7 @@ export default class CompanyService {
     return await this.roleRepo.search('cid', cid)
   }
 
-  async saveRole(role: IOT.Role) {
+  async saveRole(role: Organization.Role) {
     if (role._id) {
       return await this.roleRepo.save(role)
     } else {
@@ -94,8 +95,7 @@ export default class CompanyService {
     return await this.operatorRepo.pagedGet(cid, page ? page : 0, 15)
   }
 
-  async getMyOperatorInfo(token: string) {
-    let uid = await this.userService.token2uid(token)
+  async getOperatorInfo(uid: string) {
     let operator = await this.operatorRepo.get('uid', uid)
 
     if (operator) {
@@ -111,7 +111,7 @@ export default class CompanyService {
 
       let privileges = new Set<string>()
       resp.results.forEach(it => {
-        let role = it.docs[0]['ok'] as IOT.Role
+        let role = it.docs[0]['ok'] as Organization.Role
         role.privileges.forEach(item => privileges.add(item))
       })
       operator.fullRoles = operator.roles.map(it => {
@@ -119,13 +119,14 @@ export default class CompanyService {
       })
 
       operator.privileges = Array.from(privileges)
-    }
 
-    delete operator?._rev
+      delete operator?._rev
+    }
+    
     return operator
   }
 
-  async saveOperator(operator: IOT.Operator) {
+  async saveOperator(operator: Organization.Operator) {
     if (operator._id) {
       return await this.operatorRepo.save(operator)
     } else {

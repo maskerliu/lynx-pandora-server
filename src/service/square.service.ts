@@ -1,5 +1,5 @@
 import { UploadedFile } from 'express-fileupload'
-import { Autowired, Service } from 'lynx-express-mvc'
+import { Autowired, BizCode, BizFail, Service } from 'lynx-express-mvc'
 import path from 'path'
 import { STATIC_DIR } from '../common/env.const'
 import { Timeline } from '../models'
@@ -47,7 +47,7 @@ export class CommentService {
     if (comment != null && comment.uid == uid) {
       return await this.commentRepo.remove(comment._id, comment._rev)
     } else {
-      throw 'cant delete others comment'
+      throw new BizFail(BizCode.FAIL, 'cant delete others comment')
     }
   }
 }

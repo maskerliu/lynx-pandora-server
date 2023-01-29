@@ -1,14 +1,18 @@
 import { UploadedFile } from 'express-fileupload'
 import { Autowired, BizContext, BodyParam, Controller, FileParam, Get, Post, QueryParam } from 'lynx-express-mvc'
 import { RemoteAPI, User } from '../models'
-import CompanyService from '../service/company.service'
+import CompanyService from '../service/organization.service'
+import { GradeService } from '../service/grade.service'
 import UserService from '../service/user.service'
 
 @Controller(RemoteAPI.User.BasePath)
 export default class UserController {
 
   @Autowired()
-  userService: UserService
+  private userService: UserService
+
+  @Autowired()
+  private gradeService: GradeService
 
   @Autowired()
   private companyService: CompanyService
@@ -23,24 +27,15 @@ export default class UserController {
     return this.userService.register(phone, pwd)
   }
 
-  @Post(RemoteAPI.User.ProfileAvatar)
-  async uploadUserAvatar(@FileParam('avatar') avatar: UploadedFile, context: BizContext) {
-    return this.userService.updateAvatar(avatar, context.token)
-  }
 
   @Post(RemoteAPI.User.ProfileSave)
-  async updateUserProfile(@BodyParam('profile') profile: User.Profile, context: BizContext) {
-    return await this.userService.saveProfile(profile, context.token)
-  }
-
-  @Post(RemoteAPI.User.ProfileMyself)
-  async getMyProfile(context: BizContext) {
-    let uid = await this.userService.token2uid(context.token)
-    return await this.userService.getUserInfo(uid)
+  async updateUserProfile(@BodyParam('profile') profile: User.Profile, @FileParam('avatar') avatar: UploadedFile, context: BizContext) {
+    return await this.userService.saveProfile(profile, avatar, context.token)
   }
 
   @Get(RemoteAPI.User.ProfileInfo)
-  async getUserInfo(@QueryParam('uid') uid: string) {
+  async getUserInfo(@QueryParam('uid') uid: string, context: BizContext) {
+    if (uid == null) uid = await this.userService.token2uid(context.token)
     return await this.userService.getUserInfo(uid)
   }
 
@@ -57,6 +52,17 @@ export default class UserController {
   @Get(RemoteAPI.User.Contact)
   async getMyContct(@QueryParam('page') page: number, context: BizContext) {
     return await this.companyService.getMyContact(context.token, page)
+  }
+
+  @Get(RemoteAPI.User.GradeConfig)
+  async getGradeConfig() {
+    return await this.gradeService.getGradeConfig()
+  }
+
+  @Get(RemoteAPI.User.UserGrade)
+  async getUserGradeInfo(@QueryParam('uid') uid: string, context: BizContext) {
+    if (uid == null) uid = await this.userService.token2uid(context.token)
+    return await this.gradeService.userGradeInfo(uid)
   }
 
 }

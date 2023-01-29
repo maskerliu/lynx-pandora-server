@@ -20,6 +20,12 @@ export namespace User {
     Online = 1
   }
 
+  export interface Account extends Common.DBDoc {
+    phone: string,
+    encryptPWD?: string,
+    token?: string,
+  }
+
   export interface Profile extends Common.DBDoc {
     uid: string,
     showNo?: string,
@@ -27,13 +33,16 @@ export namespace User {
     gender?: UserGender,
     avatar?: string,
     onlineStatus?: UserOnlineStatus
-    score: number
+    score?: number
   }
 
-  export interface Account extends Common.DBDoc {
-    phone: string,
-    encryptPWD?: string,
-    token?: string,
+  export interface UserGradeInfo {
+    gradeLevel: number
+    curGradeName: string
+    curGradeIcon: string
+    nextGradeName: string
+    nextGradeIcon: string
+    diffScore: number
   }
 
   export interface GradeItem extends Common.DBDoc {
@@ -49,5 +58,34 @@ export namespace User {
     score: number
     note: string // 积分来源备注
     timestamp: number
+  }
+
+  export enum VIPStatus {
+    On,  // 在线
+    Off  // 下线
+  }
+
+  export enum VIPType {
+    Normal,
+    SVIP
+  }
+
+  export interface VIPItem extends Common.DBDoc {
+    name: string
+    type: VIPType
+    price: number
+    discount: number
+    expired: number
+    status: VIPStatus
+    seq: number
+  }
+
+  export interface VIPOrder extends Common.DBDoc {
+    uid: string
+    vipId: string
+    type: VIPType
+    payId: string
+    timestamp: number
+    expired: number
   }
 }

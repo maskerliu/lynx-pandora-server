@@ -5,13 +5,20 @@ import path from 'path'
 import { STATIC_DIR } from '../common/env.const'
 import { User } from '../models'
 import { IM } from '../models/im.model'
-import { OfflineMessageRepo, SessionRepo } from '../repository/im.repo'
+import { EmojiRepo, OfflineMessageRepo, SessionRepo } from '../repository/im.repo'
 import MQClient from './mqtt.client'
 import UserService from './user.service'
-
+import sharp from 'sharp'
 
 @Service()
 export default class IMService {
+
+
+  @Autowired()
+  private userService: UserService
+
+  @Autowired()
+  private emojiRepo: EmojiRepo
 
   @Autowired()
   private sessionRepo: SessionRepo
@@ -19,8 +26,6 @@ export default class IMService {
   @Autowired()
   private messageRepo: OfflineMessageRepo
 
-  @Autowired()
-  private userService: UserService
 
   @Autowired()
   private mqClient: MQClient
@@ -29,9 +34,7 @@ export default class IMService {
 
   private messagePool: Map<string, Array<IM.Message>> = new Map()
 
-  init() {
-    this.mqClient.onIMMsgArrived = { thiz: this, handler: this.handleMsg }
-
+  async init() {
     setInterval(async () => {
       this.messagePool.forEach((msgs, key) => {
         if (msgs.length > 0) {
@@ -40,6 +43,58 @@ export default class IMService {
         }
       })
     }, 500)
+
+    sharp(STATIC_DIR + '/4cfb44751ce14a729e523746f6de773f.gif', { animated: true })
+      .toFormat('webp')
+      // .gif({ dither: 0.5, interFrameMaxError: 8, loop: 1 })
+      .toBuffer((_, data, info) => {
+        console.log(info)
+        console.log(md5(data))
+      })
+      .toFile('test.webp', (err, info) => {
+        console.log(err)
+        console.log(info)
+      })
+
+  }
+
+  async getMyEmojis(token: string) {
+    let uid = await this.userService.token2uid(token)
+    let result = await this.emojiRepo.getMyEmojis(uid)
+    result.forEach(it => { delete it._rev })
+    return result
+  }
+
+  async addEmoji(file: UploadedFile, token: string) {
+    let uid = await this.userService.token2uid(token)
+    if (file == null) throw 'fail to add emoji'
+
+    try {
+      let ext = file.name.split('.').pop()
+      await file.mv(path.join(STATIC_DIR, file.md5 + '.' + ext))
+
+      if (ext.toLocaleLowerCase() == 'gif') {
+
+      }
+    } catch (err) {
+
+    }
+
+    let emoji: IM.IMEmoji = {
+      uid, name: '', snap: ''
+    }
+
+  }
+
+  async deleteEmoji(eid: string, token: string) {
+    let uid = await this.userService.token2uid(token)
+    let emoji = await this.emojiRepo.get('_id', eid)
+    if (emoji.uid == uid) {
+      await this.emojiRepo.remove(emoji._id, emoji._rev)
+    } else {
+      throw 'can not delete emoji which not belong to you'
+    }
+
   }
 
   async getSession(sid: string) {
@@ -139,9 +194,5 @@ export default class IMService {
     await this.messageRepo.bulkDocs(offlineMsgs)
 
     return 'success'
-  }
-
-  async handleMsg(topic: string, message: IM.Message) {
-
   }
 }

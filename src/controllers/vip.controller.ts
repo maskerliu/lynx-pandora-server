@@ -11,16 +11,16 @@ export class VIPController {
 
   @Get(RemoteAPI.VIP.Config)
   async vipConfig() {
-    return this.vipService.config()
+    return await this.vipService.config()
   }
 
   @Get(RemoteAPI.VIP.MyVIP)
   async myVIP(context: BizContext) {
-    return this.vipService.myVIP(context.token)
+    return await this.vipService.myVIP(context.token)
   }
 
   @Post(RemoteAPI.VIP.Buy)
   async bug(@QueryParam('vipId') vipId: string, context: BizContext) {
-    return this.vipService.buy(vipId, context.token)
+    return await this.vipService.buy(vipId, context.token)
   }
 }

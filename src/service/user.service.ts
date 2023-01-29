@@ -41,12 +41,17 @@ export default class UserService {
   async updateUserStatus(topic: string, message: any) {
     let uid = topic.split('/').pop()
     let profile = await this.userInfoRepo.get('uid', uid)
-    profile.onlineStatus = message.length == 0 ? User.UserOnlineStatus.Online : User.UserOnlineStatus.Offline
-    await this.userInfoRepo.save(profile)
+    if (profile) {
+      profile.onlineStatus = message.length == 0 ? User.UserOnlineStatus.Online : User.UserOnlineStatus.Offline
+      await this.userInfoRepo.save(profile)
+    } else {
+      console.error(`can not find user with id[${uid}]`)
+    }
   }
 
   async userOnlineStatus(uid: string) {
-    return (await this.userInfoRepo.get('uid', uid)).onlineStatus
+    let profile = await this.userInfoRepo.get('uid', uid)
+    return profile.onlineStatus
   }
 
   async login(phone: string, verify: string) {
@@ -110,15 +115,28 @@ export default class UserService {
     await this.userInfoRepo.save(profile)
   }
 
-  async saveProfile(profile: User.Profile, token: string) {
+  async saveProfile(profile: User.Profile, avatar: UploadedFile, token: string) {
     let uid = await this.token2uid(token)
-    if (uid == null) throw '登录信息过期，请重新登录'
     let dbProfile = await this.userInfoRepo.get('uid', uid)
+    if (uid == null) throw '登录信息过期，请重新登录'
+
+    if (avatar != null) {
+      let ext = avatar.name.split('.').pop()
+      await avatar.mv(path.join(STATIC_DIR, avatar.md5 + '.' + ext))
+      if (profile == null) {
+        profile = { uid, avatar: `/_res/${avatar.md5}.${ext}` }
+      } else {
+        profile.avatar = `/_res/${avatar.md5}.${ext}`
+      }
+    }
+
     if (dbProfile) {
-      return await this.userInfoRepo.add(profile)
-    } else {
       profile._rev = dbProfile._rev
+      profile = Object.assign(dbProfile, profile)
       return await this.userInfoRepo.save(profile)
+    } else {
+      profile = Object.assign(profile, { score: 0, })
+      return await this.userInfoRepo.add(profile)
     }
   }
 

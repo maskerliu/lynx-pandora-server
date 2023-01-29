@@ -55,7 +55,8 @@ export default abstract class BaseRepo<T extends Common.DBDoc> {
     }
     req.selector[field] = { $eq: query }
     let result = await this.find(req)
-    return result[0] as T
+    if (result.length > 0) return result[0] as T
+    else return null
   }
 
   // public async bulkGet(ids: Array<string>) {
@@ -99,5 +100,5 @@ export default abstract class BaseRepo<T extends Common.DBDoc> {
     let resp = await this.pouchdb.remove(id, rev)
     return resp.ok
   }
-  
+
 }

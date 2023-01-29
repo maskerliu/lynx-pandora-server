@@ -10,7 +10,7 @@ export namespace Payment {
 
   export interface PurchaseItem extends Common.DBDoc {
     diamonds: number
-    discount: number    
+    discount: number
     price: number
   }
 
@@ -26,6 +26,7 @@ export namespace Payment {
     channel: string
     timestamp: number
     snap: Wallet
+    note: string // 业务备注
   }
 
   export interface PurseRecord extends Common.DBDoc {

@@ -28,7 +28,6 @@ export class GiftService {
     result.forEach(it => {
       delete it._rev
     })
-
     
     return result
   }

@@ -56,7 +56,7 @@ export class UserInfoRepo extends BaseRepo<User.Profile> {
 export class GradeRepo extends BaseRepo<User.GradeItem> {
   async init() {
     try {
-      await this.pouchdb.createIndex({ index: { fields: ['uid'], ddoc: 'idx-uid' } })
+      await this.pouchdb.createIndex({ index: { fields: ['score'], ddoc: 'idx-score' } })
     } catch (err) {
       console.error('initDB', err)
     }
@@ -68,7 +68,10 @@ export class GradeRepo extends BaseRepo<User.GradeItem> {
 
   async all() {
     let req: PouchDB.Find.FindRequest<any> = {
-      selector: {}
+      selector: {
+        score: { $gt: -1 }
+      },
+      sort: [{ 'score': 'asc' }]
     }
     return await this.find(req)
   }

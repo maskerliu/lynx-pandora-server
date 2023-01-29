@@ -2,14 +2,32 @@ import { UploadedFile } from 'express-fileupload'
 import { Autowired, BizContext, BodyParam, Controller, FileParam, Get, Post, QueryParam } from 'lynx-express-mvc'
 import { IM, RemoteAPI } from '../models'
 import IMService from '../service/im.service'
+import { RedPacketService } from '../service/redpacket.service'
 
 
 @Controller(RemoteAPI.IM.BasePath)
 export default class IMController {
 
+  @Autowired()
+  private imService: IMService
 
   @Autowired()
-  imService: IMService
+  private redpacketService: RedPacketService
+
+  @Get(RemoteAPI.IM.MyEmojis)
+  async myEmojis(context: BizContext) {
+    return await this.imService.getMyEmojis(context.token)
+  }
+
+  @Post(RemoteAPI.IM.EmojiAdd)
+  async addEmoji(@BodyParam('file') file: UploadedFile, context: BizContext) {
+    return await this.imService.addEmoji(file, context.token)
+  }
+
+  @Post(RemoteAPI.IM.EmojiDel)
+  async delEmoji(@QueryParam('eid') eid: string, context: BizContext) {
+    return await this.imService.deleteEmoji(eid, context.token)
+  }
 
   @Get(RemoteAPI.IM.SyncFrom)
   async syncFrom(@QueryParam('sid') sid: string) {
@@ -36,4 +54,18 @@ export default class IMController {
     return await this.imService.send(message, context.token, file)
   }
 
+  @Post(RemoteAPI.IM.CreateRedPacket)
+  async createRedPacket(@BodyParam() order: IM.RedPacketOrder, context: BizContext) {
+    return this.redpacketService.create(order, context.token)
+  }
+
+  @Get(RemoteAPI.IM.ClaimRedPacket)
+  async claimRedPacket(@QueryParam('orderId') orderId: string, context: BizContext) {
+    return this.redpacketService.claim(orderId, context.token)
+  }
+
+  @Get(RemoteAPI.IM.ClaimedRedPackets)
+  async claimedRedPackets(@QueryParam('orderId') orderId: string) {
+    return this.redpacketService.claimedRedPackets(orderId)
+  }
 }

@@ -90,7 +90,7 @@ function consoleLog(data: any, color?: string) {
 
 async function run() {
   deleteSync(['dist/*', '!.gitkeep'])
-  await Promise.all([startWHM()])
+  await startWHM()
   startServer()
 }
 

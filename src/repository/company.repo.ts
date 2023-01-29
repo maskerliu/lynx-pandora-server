@@ -1,15 +1,16 @@
 import { Repository } from 'lynx-express-mvc'
 import { DB_DIR } from '../common/env.const'
+import { Organization } from '../models'
 import { IOT } from '../models/iot.model'
 import BaseRepo from './base.repo'
 
 @Repository(DB_DIR, 'company.db')
-export class CompanyRepo extends BaseRepo<IOT.Company> {
+export class CompanyRepo extends BaseRepo<Organization.Company> {
   async init() { }
 }
 
 @Repository(DB_DIR, 'role.db')
-export class RoleRepo extends BaseRepo<IOT.Role> {
+export class RoleRepo extends BaseRepo<Organization.Role> {
   async init() {
     try {
       await this.pouchdb.createIndex({ index: { fields: ['cid'], ddoc: 'idx-cid' } })
@@ -20,7 +21,7 @@ export class RoleRepo extends BaseRepo<IOT.Role> {
 }
 
 @Repository(DB_DIR, 'operator.db')
-export class OperatorRepo extends BaseRepo<IOT.Operator> {
+export class OperatorRepo extends BaseRepo<Organization.Operator> {
 
   async init() {
     try {

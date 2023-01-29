@@ -3,6 +3,7 @@ import { Router, Route } from 'lynx-express-mvc'
 
 import './controllers/common.controller'
 import './controllers/user.controller'
+import './controllers/organization.controller'
 import './controllers/iot.controller'
 import './controllers/im.controller'
 import './controllers/chatroom.controller'

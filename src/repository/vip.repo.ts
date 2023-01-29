@@ -1,11 +1,10 @@
 import { Repository } from 'lynx-express-mvc'
 import { DB_DIR } from '../common/env.const'
-import { VIP } from '../models'
-import { User } from '../models/user.model'
+import { User } from '../models'
 import BaseRepo from './base.repo'
 
 @Repository(DB_DIR, 'vip-item.db')
-export class VIPItemRepo extends BaseRepo<VIP.VIPItem>{
+export class VIPItemRepo extends BaseRepo<User.VIPItem>{
   async init() {
     try {
       await this.pouchdb.createIndex({ index: { fields: ['status', 'seq'], ddoc: 'idx-seq' } })
@@ -14,14 +13,14 @@ export class VIPItemRepo extends BaseRepo<VIP.VIPItem>{
     }
   }
 
-  async importData(items: Array<VIP.VIPItem>) {
+  async importData(items: Array<User.VIPItem>) {
     await this.pouchdb.bulkDocs(items)
   }
 
   async getAllVaildItems() {
     let req: PouchDB.Find.FindRequest<any> = {
       selector: {
-        status: VIP.VIPStatus.On,
+        status: User.VIPStatus.On,
         seq: { $gt: -1 }
       },
       sort: [{ 'status': 'asc' }, { 'seq': 'asc' }],
@@ -30,14 +29,14 @@ export class VIPItemRepo extends BaseRepo<VIP.VIPItem>{
     let resp = await this.pouchdb.find(req)
     return resp.docs.map(it => {
       delete it._rev
-      return it as VIP.VIPItem
+      return it as User.VIPItem
     })
   }
 }
 
 
 @Repository(DB_DIR, 'vip-order.db')
-export class VIPOrderRepo extends BaseRepo<VIP.VIPOrder> {
+export class VIPOrderRepo extends BaseRepo<User.VIPOrder> {
   async init() {
     try {
       await this.pouchdb.createIndex({ index: { fields: ['uid'], ddoc: 'idx-uid' } })
@@ -51,20 +50,12 @@ export class VIPOrderRepo extends BaseRepo<VIP.VIPOrder> {
     let req: PouchDB.Find.FindRequest<any> = {
       selector: {
         uid,
-        timestamp: { $lt: time },
         expired: { $gt: time }
       }
     }
-
-    let resp = await this.pouchdb.find(req)
-    if (resp.docs.length > 0) return resp.docs[0] as VIP.VIPOrder
+    let resp = await this.find(req)
+    if (resp.length > 0) return resp[0] as User.VIPOrder
     else return null
-  }
-
-  async addOrder(order: VIP.VIPOrder) {
-    let resp = await this.pouchdb.post(order)
-    if (resp.ok) return resp.id
-    else throw 'fail to add vip order'
   }
 }
 
