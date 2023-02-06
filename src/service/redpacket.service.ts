@@ -19,10 +19,10 @@ export class RedPacketService {
   private imService: IMService
 
   @Autowired()
-  redpacketRepo: RedPacketRepo
+  private redpacketRepo: RedPacketRepo
 
   @Autowired()
-  redpacketOrderRepo: RedPacketOrderRepo
+  private redpacketOrderRepo: RedPacketOrderRepo
 
   async create(order: IM.RedPacketOrder, token: string) {
     let uid = await this.userService.token2uid(token)
@@ -33,6 +33,10 @@ export class RedPacketService {
     order.uid = uid
     order.payId = payId
     order.timestamp = new Date().getTime()
+
+    if (isNaN(order.amount) || isNaN(order.count)) throw 'invalid params'
+    order.amount = Number.parseInt(order.amount as any)
+    order.count = Number.parseInt(order.count as any)
 
     let orderId = await this.redpacketOrderRepo.add(order)
     order._id = orderId
@@ -85,8 +89,7 @@ export class RedPacketService {
     return packets
   }
 
-  private genRedPacket(amount: number, count: number, orderId: string, type: IM.RedPacketType) {
-
+  private genRedPacket(amount: any, count: any, orderId: string, type: IM.RedPacketType) {
     let packets: Array<IM.RedPacket> = []
     let timestamp = new Date().getTime()
     switch (type) {

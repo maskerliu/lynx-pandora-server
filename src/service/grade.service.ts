@@ -16,8 +16,7 @@ export class GradeService {
   @Autowired()
   private recordRepo: GradeScoreRecordRepo
 
-  Grade_Configs: Array<User.GradeItem> = []
-
+  private Grade_Configs: Array<User.GradeItem> = []
 
   async init() {
     // await this.gradeRepo.importData(GradeConfigs)

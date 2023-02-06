@@ -209,7 +209,7 @@ export class SeatReqRepo extends BaseRepo<Chatroom.SeatReq> {
 
 // Emoji
 @Repository(DB_DIR, 'chatroom-emoji.db')
-export class EmojiRepo extends BaseRepo<Chatroom.Emoji> {
+export class RoomEmojiRepo extends BaseRepo<Chatroom.Emoji> {
   async init() {
     try {
       await this.pouchdb.createIndex({ index: { fields: ['type', 'status'], ddoc: 'idx-emoji' } })

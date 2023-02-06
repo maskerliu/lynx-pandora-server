@@ -11,10 +11,10 @@ import UserService from './user.service'
 export class CommentService {
 
   @Autowired()
-  userService: UserService
+  private userService: UserService
 
   @Autowired()
-  commentRepo: CommentRepo
+  private commentRepo: CommentRepo
 
   async snapComments(type: number, postIds: string) {
     return await this.commentRepo.pagedGet(type, postIds, 0, 5)
@@ -56,10 +56,7 @@ export class CommentService {
 export class PostService {
 
   @Autowired()
-  userService: UserService
-
-  @Autowired()
-  postRepo: PostRepo
+  private postRepo: PostRepo
 
   async recomends(uid: string, page: number) {
     return await this.postRepo.getPagedLastPosts(uid, page, 5)
@@ -75,13 +72,13 @@ export class PostService {
 export class MomentService {
 
   @Autowired()
-  userService: UserService
+  private userService: UserService
 
   @Autowired()
-  commentService: CommentService
+  private commentService: CommentService
 
   @Autowired()
-  momentRepo: MomentRepo
+  private momentRepo: MomentRepo
 
   async recommends(uid: string, page: number) {
     let result = await this.momentRepo.getPagedLastMoments(uid, page, 5)

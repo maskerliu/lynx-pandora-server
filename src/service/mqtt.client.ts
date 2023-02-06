@@ -48,7 +48,7 @@ export default class MQClient {
       }
 
       if (topic.indexOf('_client/lwt/im') != -1) {
-        console.log(topic, message.toString())
+        // console.log(topic, message.toString())
         Reflect.apply(this.onIMClientMsgArrived.handler, this.onIMClientMsgArrived.thiz, [topic, message.toString()])
       }
     })

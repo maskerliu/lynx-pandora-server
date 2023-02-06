@@ -94,6 +94,7 @@ export class ChatroomService {
     }
 
     await this.roomCollectionRepo.updateCollection(collection)
+    return 'success'
   }
 
   async getMyRooms(token: string) {

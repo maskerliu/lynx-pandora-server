@@ -49,6 +49,7 @@ export namespace RemoteAPI {
     MyEmojis: '/myEmojis',
     EmojiAdd: '/emoji/add',
     EmojiDel: '/emoji/del',
+    EmojiReorder: '/emoji/reorder',
     SyncFrom: '/sync/get',
     BulkSyncFrom: '/sync/bulkGet',
     SyncTo: '/sync/save',

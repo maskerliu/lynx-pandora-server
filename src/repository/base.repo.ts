@@ -91,7 +91,7 @@ export default abstract class BaseRepo<T extends Common.DBDoc> {
     else throw 'fail to save'
   }
 
-  public async bulkDocs(items: Array<T>) {
+  public async bulkDocs(items: Array<T | { _id: string, _rev: string }>) {
     let resp = await this.pouchdb.bulkDocs(items)
     return resp.map(it => { return it.id })
   }

@@ -2,7 +2,7 @@ import { UploadedFile } from 'express-fileupload'
 import { Autowired, BizContext, BodyParam, Controller, FileParam, Get, Post, QueryParam } from 'lynx-express-mvc'
 import { Chatroom, RemoteAPI } from '../models'
 import { ChatroomService } from '../service/chatroom/chatroom.service'
-import { EmojiService } from '../service/chatroom/emoji.service'
+import { ChatEmojiService } from '../service/chatroom/emoji.service'
 import { GiftService } from '../service/chatroom/gift.service'
 import { PropService } from '../service/chatroom/prop.service'
 
@@ -40,7 +40,7 @@ export class ChatroomController {
   giftService: GiftService
 
   @Autowired()
-  emojiService: EmojiService
+  emojiService: ChatEmojiService
 
 
   @Get(RemoteAPI.Chatroom.MyRooms)

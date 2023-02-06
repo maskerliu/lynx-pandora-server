@@ -1,8 +1,8 @@
 import { Service } from 'lynx-express-mvc'
 import path from 'path'
+import PouchDB from 'pouchdb-node'
 import { DB_DIR } from '../common/env.const'
 import { Common } from '../models'
-import PouchDB from 'pouchdb-node'
 
 
 @Service()
@@ -21,6 +21,7 @@ export default class DBMgrService {
 
   // private dbs: Array<PouchDB.Database> = new Array()
   private dbs: Map<string, PouchDB.Database> = new Map()
+
   constructor() {
     this.dbInfos.forEach(item => {
       this.dbs.set(item, new PouchDB(path.join(DB_DIR, item)))
@@ -43,7 +44,7 @@ export default class DBMgrService {
     let db = this.dbs.get(dbName)
     return await db.allDocs({ include_docs: true, attachments: true })
   }
-  
+
   async deleteDoc(dbName: string, docId: string, revId: string) {
     let db = this.dbs.get(dbName)
     await db.remove(docId, revId)

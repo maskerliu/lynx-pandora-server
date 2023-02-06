@@ -20,13 +20,19 @@ export default class IMController {
   }
 
   @Post(RemoteAPI.IM.EmojiAdd)
-  async addEmoji(@BodyParam('file') file: UploadedFile, context: BizContext) {
-    return await this.imService.addEmoji(file, context.token)
+  async addEmoji(@FileParam('file') file: UploadedFile,
+    @BodyParam('emoji') emoji: IM.IMEmoji, context: BizContext) {
+    return await this.imService.addEmoji(file, emoji, context.token)
   }
 
   @Post(RemoteAPI.IM.EmojiDel)
-  async delEmoji(@QueryParam('eid') eid: string, context: BizContext) {
-    return await this.imService.deleteEmoji(eid, context.token)
+  async delEmojis(@BodyParam() req: { emojiIds: string[] }, context: BizContext) {
+    return await this.imService.deleteEmojis(req.emojiIds, context.token)
+  }
+
+  @Post(RemoteAPI.IM.EmojiReorder)
+  async reorderEmojis(@BodyParam() req: { emojiIds: string[] }, context: BizContext) {
+    return await this.imService.reorderEmojis(req.emojiIds, context.token)
   }
 
   @Get(RemoteAPI.IM.SyncFrom)

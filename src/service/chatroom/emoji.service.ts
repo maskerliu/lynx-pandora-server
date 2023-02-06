@@ -1,16 +1,15 @@
 import { Autowired, Service } from 'lynx-express-mvc'
 
-import ToolEmojis from './data/emoji.tools.json'
-import BasicEmojis from './data/emoji.basic.json'
-import VipEmojis from './data/emoji.vip.json'
-import { EmojiRepo } from '../../repository/chatroom.repo'
 import { Chatroom } from '../../models'
+import { RoomEmojiRepo } from '../../repository/chatroom.repo'
+import BasicEmojis from './data/emoji.basic.json'
+import ToolEmojis from './data/emoji.tools.json'
 
 @Service()
-export class EmojiService {
+export class ChatEmojiService {
 
   @Autowired()
-  emojiRepo: EmojiRepo
+  private roomEmojiRepo: RoomEmojiRepo
 
   async init() {
     // let emojis = [...BasicEmojis, ...ToolEmojis] as Array<Chatroom.Emoji>
@@ -19,7 +18,7 @@ export class EmojiService {
   }
 
   async getEmojis(roomId: string) {
-    let emojis = await this.emojiRepo.getEmojis()
+    let emojis = await this.roomEmojiRepo.getEmojis()
 
     let tools: Array<Chatroom.Emoji> = []
     let basic: Array<Chatroom.Emoji> = []

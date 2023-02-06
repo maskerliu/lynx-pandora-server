@@ -1,14 +1,14 @@
 import { UploadedFile } from 'express-fileupload'
-import { Autowired, Service } from 'lynx-express-mvc'
+import { Autowired, BizCode, BizFail, Service } from 'lynx-express-mvc'
 import md5 from 'md5'
 import path from 'path'
+import sharp from 'sharp'
 import { STATIC_DIR } from '../common/env.const'
 import { User } from '../models'
 import { IM } from '../models/im.model'
-import { EmojiRepo, OfflineMessageRepo, SessionRepo } from '../repository/im.repo'
+import { IMEmojiRepo, OfflineMessageRepo, SessionRepo } from '../repository/im.repo'
 import MQClient from './mqtt.client'
 import UserService from './user.service'
-import sharp from 'sharp'
 
 @Service()
 export default class IMService {
@@ -18,7 +18,7 @@ export default class IMService {
   private userService: UserService
 
   @Autowired()
-  private emojiRepo: EmojiRepo
+  private imEmojiRepo: IMEmojiRepo
 
   @Autowired()
   private sessionRepo: SessionRepo
@@ -44,57 +44,99 @@ export default class IMService {
       })
     }, 500)
 
-    sharp(STATIC_DIR + '/4cfb44751ce14a729e523746f6de773f.gif', { animated: true })
-      .toFormat('webp')
-      // .gif({ dither: 0.5, interFrameMaxError: 8, loop: 1 })
-      .toBuffer((_, data, info) => {
-        console.log(info)
-        console.log(md5(data))
-      })
-      .toFile('test.webp', (err, info) => {
-        console.log(err)
-        console.log(info)
-      })
+    // sharp(STATIC_DIR + '/4cfb44751ce14a729e523746f6de773f.gif', { animated: true })
+    //   .toFormat('webp')
+    //   // .gif({ dither: 0.5, interFrameMaxError: 8, loop: 1 })
+    //   .toBuffer((_, data, info) => {
+    //     console.log(info)
+    //     console.log(md5(data))
+    //   })
+    //   .toFile('test.webp', (err, info) => {
+    //     console.log(err)
+    //     console.log(info)
+    //   })
 
   }
 
   async getMyEmojis(token: string) {
     let uid = await this.userService.token2uid(token)
-    let result = await this.emojiRepo.getMyEmojis(uid)
+    return this.getUserEmojis(uid)
+  }
+
+  async getUserEmojis(uid: string) {
+    let result = await this.imEmojiRepo.getMyEmojis(uid)
     result.forEach(it => { delete it._rev })
     return result
   }
 
-  async addEmoji(file: UploadedFile, token: string) {
+  async addEmoji(file: UploadedFile, emoji: IM.IMEmoji, token: string) {
+    if (file == null && emoji == null) throw 'file or emoji can not be null'
+
     let uid = await this.userService.token2uid(token)
-    if (file == null) throw 'fail to add emoji'
 
-    try {
-      let ext = file.name.split('.').pop()
-      await file.mv(path.join(STATIC_DIR, file.md5 + '.' + ext))
+    if (file) {
+      try {
+        let ext = file.name.split('.').pop()
+        await file.mv(path.join(STATIC_DIR, file.md5 + '.' + ext))
 
-      if (ext.toLocaleLowerCase() == 'gif') {
+        let emoji: IM.IMEmoji = {
+          uid, name: '', snap: null, timestamp: new Date().getTime()
+        }
 
+        if (ext.toLocaleLowerCase() == 'gif') {
+          let fileSharp = sharp(`${STATIC_DIR}/${file.md5}.${ext}`, { animated: false }).toFormat('webp')
+          let buffer = await fileSharp.toBuffer()
+          let fileName = md5(buffer)
+          let snap = `${fileName}.webp`
+          fileSharp.toFile(STATIC_DIR + '/' + snap)
+
+          emoji.snap = `/_res/${snap}`
+          emoji.gif = `/_res/${file.md5}.${ext}`
+        } else {
+          emoji.snap = `/_res/${file.md5}.${ext}`
+        }
+
+        let id = await this.imEmojiRepo.add(emoji)
+        emoji._id = id
+        return emoji
+      } catch (err) {
+        console.error(err)
       }
-    } catch (err) {
-
     }
 
-    let emoji: IM.IMEmoji = {
-      uid, name: '', snap: ''
+    if (emoji) {
+      let hasSameEmoji = await this.imEmojiRepo.findSameEmoji(uid, emoji)
+      if (hasSameEmoji) throw new BizFail(BizCode.FAIL, '已存在相同的表情')
+      emoji.uid = uid
+      let id = await this.imEmojiRepo.add(emoji)
+      emoji._id = id
+      return emoji
     }
 
   }
 
-  async deleteEmoji(eid: string, token: string) {
+  async deleteEmojis(eids: string[], token: string) {
     let uid = await this.userService.token2uid(token)
-    let emoji = await this.emojiRepo.get('_id', eid)
-    if (emoji.uid == uid) {
-      await this.emojiRepo.remove(emoji._id, emoji._rev)
-    } else {
-      throw 'can not delete emoji which not belong to you'
-    }
+    let emojis = await this.imEmojiRepo.bulkEmojis(eids)
 
+
+    let removeDocs = emojis.map(it => {
+      if (it.uid == uid) return { _id: it._id, _rev: it._rev, _deleted: true }
+    })
+
+    await this.imEmojiRepo.pouchdb.bulkDocs(removeDocs)
+    return await this.getUserEmojis(uid)
+  }
+
+  async reorderEmojis(eids: string[], token: string) {
+    let uid = await this.userService.token2uid(token)
+    let emojis = await this.imEmojiRepo.bulkEmojis(eids)
+
+    let timestamp = new Date().getTime()
+    emojis.forEach(it => { it.timestamp = timestamp })
+
+    await this.imEmojiRepo.bulkDocs(emojis)
+    return await this.getUserEmojis(uid)
   }
 
   async getSession(sid: string) {

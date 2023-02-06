@@ -4,7 +4,7 @@ import { IM } from '../models/im.model'
 import BaseRepo from './base.repo'
 
 @Repository(DB_DIR, 'im-emoji.db')
-export class EmojiRepo extends BaseRepo<IM.IMEmoji> {
+export class IMEmojiRepo extends BaseRepo<IM.IMEmoji> {
   async init() {
     try {
       await this.pouchdb.createIndex({ index: { fields: ['uid', 'timestamp'], ddoc: 'idx-uid' } })
@@ -16,8 +16,23 @@ export class EmojiRepo extends BaseRepo<IM.IMEmoji> {
   async getMyEmojis(uid: string) {
     let req: PouchDB.Find.FindRequest<any> = {
       selector: { uid, timestamp: { $lt: new Date().getTime() } },
-      sort: [{ 'uid': 'asc' }, { 'timestamp': 'desc' }],
+      sort: [{ 'uid': 'desc' }, { 'timestamp': 'desc' }],
       use_index: 'idx-uid'
+    }
+    return await this.find(req)
+  }
+
+  async findSameEmoji(uid: string, emoji: IM.IMEmoji) {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: { uid, snap: emoji.snap, gif: emoji.gif }
+    }
+    let result = await this.find(req)
+    return result.length > 0
+  }
+
+  async bulkEmojis(ids: string[]) {
+    let req: PouchDB.Find.FindRequest<any> = {
+      selector: { _id: { $in: ids } }
     }
     return await this.find(req)
   }
